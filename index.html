@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sahyog Medical – Voice Billing v3</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:#0a0f0a; --surface:#111811; --card:#151e15; --border:#1e2e1e;
+  --accent:#22c55e; --accent-dim:rgba(34,197,94,0.12); --accent-glow:rgba(34,197,94,0.25);
+  --text:#e8f5e8; --text2:#8fba8f; --text3:#4a6b4a;
+  --red:#ef4444; --amber:#f59e0b; --blue:#60a5fa;
+  --mono:'IBM Plex Mono',monospace; --head:'Rajdhani',sans-serif; --radius:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--head);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(34,197,94,0.05) 0%,transparent 70%);pointer-events:none;z-index:0;}
+.container{max-width:840px;margin:0 auto;padding:12px 16px 80px;position:relative;z-index:1;}
+
+/* ── HEADER ── */
+.header{text-align:center;padding:18px 0 14px;border-bottom:1px solid var(--border);margin-bottom:14px;}
+.store-name{font-size:24px;font-weight:700;letter-spacing:3px;color:var(--accent);text-transform:uppercase;}
+.store-tagline{font-size:10px;letter-spacing:4px;color:var(--text3);text-transform:uppercase;margin-top:2px;}
+.store-addr{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;}
+.bill-meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;font-family:var(--mono);color:var(--text3);}
+.bill-no{color:var(--accent);font-weight:600;font-size:13px;}
+
+/* ── STATUS ── */
+.status-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;min-height:42px;font-family:var(--mono);font-size:12px;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:all 0.3s;}
+.status-dot.listening{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 1.2s infinite;}
+.status-dot.thinking{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:pulse 0.8s infinite;}
+.status-dot.waiting{background:var(--blue);box-shadow:0 0 8px var(--blue);animation:pulse 1s infinite;}
+.status-dot.error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.status-text{color:var(--text2);flex:1;line-height:1.5;}
+.transcript-live{color:var(--accent);font-style:italic;}
+
+/* ── MIC ── */
+.mic-section{display:flex;justify-content:center;margin-bottom:14px;}
+.mic-btn{width:76px;height:76px;border-radius:50%;border:2px solid var(--accent);background:var(--accent-dim);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:all 0.2s;font-family:var(--head);font-size:9px;font-weight:600;letter-spacing:1px;color:var(--accent);text-transform:uppercase;position:relative;overflow:hidden;}
+.mic-btn svg{width:26px;height:26px;fill:var(--accent);}
+.mic-btn:hover{background:rgba(34,197,94,0.2);transform:scale(1.05);}
+.mic-btn.active{background:var(--accent);border-color:var(--accent);box-shadow:0 0 24px var(--accent-glow);animation:mic-pulse 1.5s infinite;}
+.mic-btn.active svg{fill:#0a0f0a;}
+.mic-btn.active .mic-label{color:#0a0f0a;}
+.mic-btn.waiting-mode{border-color:var(--blue);background:rgba(96,165,250,0.1);}
+.mic-btn.waiting-mode svg{fill:var(--blue);}
+.mic-btn.waiting-mode .mic-label{color:var(--blue);}
+@keyframes mic-pulse{0%,100%{box-shadow:0 0 24px var(--accent-glow)}50%{box-shadow:0 0 40px rgba(34,197,94,0.5)}}
+.mic-ripple{position:absolute;border-radius:50%;border:2px solid currentColor;opacity:0;}
+.mic-btn.active .mic-ripple{border-color:var(--accent);animation:ripple 1.5s infinite;}
+@keyframes ripple{0%{width:76px;height:76px;opacity:0.6}100%{width:160px;height:160px;opacity:0}}
+
+/* ── ASK BANNER ── */
+.ask-banner{background:linear-gradient(135deg,rgba(96,165,250,0.12),rgba(96,165,250,0.05));border:1px solid rgba(96,165,250,0.35);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;display:none;align-items:center;gap:12px;}
+.ask-banner.show{display:flex;}
+.ask-icon{font-size:20px;flex-shrink:0;}
+.ask-body{flex:1;}
+.ask-q{color:var(--blue);font-weight:700;font-size:15px;letter-spacing:0.5px;}
+.ask-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px;}
+.ask-input-row{display:flex;gap:8px;margin-top:8px;}
+.ask-txt{background:var(--bg);border:1px solid rgba(96,165,250,0.3);color:var(--text);border-radius:4px;padding:7px 10px;font-family:var(--mono);font-size:13px;outline:none;flex:1;transition:border-color 0.2s;}
+.ask-txt:focus{border-color:var(--blue);}
+.ask-ok{background:var(--blue);color:#0a0f0a;border:none;border-radius:4px;padding:7px 14px;font-family:var(--head);font-weight:600;font-size:13px;cursor:pointer;}
+
+/* ── PATIENT / DOCTOR CARD ── */
+.patient-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;}
+.card-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;font-family:var(--mono);}
+.patient-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field-wrap{display:flex;flex-direction:column;gap:4px;}
+.field-wrap.full{grid-column:1/-1;}
+.field-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);}
+.field-row{display:flex;gap:6px;align-items:center;}
+.field-input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:8px 10px;font-family:var(--mono);font-size:13px;outline:none;transition:border-color 0.2s;width:100%;}
+.field-input:focus{border-color:var(--accent);}
+.field-input.filled{border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.03);}
+.voice-field-btn{width:32px;height:32px;flex-shrink:0;border-radius:4px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;color:var(--text3);}
+.voice-field-btn:hover{border-color:var(--accent);color:var(--accent);}
+.voice-field-btn.recording{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);animation:pulse 1s infinite;}
+.voice-field-btn svg{width:15px;height:15px;fill:currentColor;}
+
+/* ── HELP ── */
+.help-strip{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:11px;font-family:var(--mono);color:var(--text3);line-height:2;}
+.help-strip strong{color:var(--text2);}
+.cmd{color:var(--accent);background:rgba(34,197,94,0.06);padding:1px 4px;border-radius:3px;}
+
+/* ── ITEMS TABLE ── */
+.items-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;}
+.items-header,.item-row{display:grid;grid-template-columns:1.8fr 44px 44px 54px 54px 72px 28px;padding:8px 10px;align-items:center;gap:2px;}
+.items-header{background:var(--card);border-bottom:1px solid var(--border);font-size:9px;font-weight:600;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;}
+.items-list{min-height:70px;}
+.item-row{border-bottom:1px solid var(--border);font-size:13px;animation:row-in 0.22s ease;transition:background 0.15s;}
+.item-row:hover{background:var(--card);}
+.item-row:last-child{border-bottom:none;}
+@keyframes row-in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.item-name{font-weight:600;color:var(--text);font-size:12px;line-height:1.3;}
+.item-name small{display:block;font-size:10px;color:var(--text3);font-weight:400;font-family:var(--mono);}
+.item-num{font-family:var(--mono);font-size:12px;color:var(--text2);text-align:center;}
+.item-num.dim{color:var(--text3);}
+.item-total{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:500;text-align:right;}
+.del-btn{width:22px;height:22px;border-radius:4px;background:transparent;border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;margin-left:auto;}
+.del-btn:hover{background:rgba(239,68,68,0.15);border-color:var(--red);color:var(--red);}
+.empty-state{padding:30px;text-align:center;color:var(--text3);font-size:13px;font-family:var(--mono);}
+.empty-icon{font-size:28px;margin-bottom:8px;opacity:0.4;}
+
+/* ── MANUAL ENTRY ── */
+.manual-toggle{text-align:center;margin-bottom:12px;}
+.manual-link{font-size:12px;color:var(--text3);cursor:pointer;font-family:var(--mono);text-decoration:underline;transition:color 0.2s;}
+.manual-link:hover{color:var(--text2);}
+.manual-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px;display:none;}
+.manual-form.show{display:block;}
+.manual-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px;}
+.manual-input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:7px 9px;font-family:var(--mono);font-size:12px;outline:none;transition:border-color 0.2s;width:100%;}
+.manual-input::placeholder{color:var(--text3);}
+.manual-input:focus{border-color:var(--accent);}
+
+/* ── TOTALS ── */
+.totals-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;}
+.totals-row{display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:13px;}
+.totals-row:last-child{border-bottom:none;}
+.totals-row.sub{color:var(--text3);font-size:12px;}
+.totals-row.roundoff{color:var(--amber);font-size:12px;}
+.totals-row.discount-row{color:var(--red);font-size:13px;}
+.totals-row.final{background:var(--accent-dim);font-size:16px;font-weight:600;color:var(--accent);}
+.totals-row.final .val{font-size:22px;}
+.item-count-badge{font-size:10px;color:var(--text3);font-family:var(--mono);padding:8px 14px;border-bottom:1px solid var(--border);}
+
+/* ── ACTIONS ── */
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.btn{padding:12px 18px;border-radius:var(--radius);font-family:var(--head);font-size:14px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:none;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#0a0f0a;}
+.btn-primary:hover{background:#16a34a;transform:translateY(-1px);box-shadow:0 4px 14px rgba(34,197,94,0.3);}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--text2);color:var(--text);}
+
+/* ── SHEETS STATUS ── */
+.sheets-status{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:5px;}
+.sheets-status.ok{color:var(--accent);}
+.sheets-status.err{color:var(--red);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);border:1px solid var(--border);padding:9px 18px;border-radius:20px;font-size:12px;font-family:var(--mono);color:var(--text2);transition:transform 0.3s;z-index:200;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{border-color:var(--accent);color:var(--accent);}
+.toast.error{border-color:var(--red);color:var(--red);}
+
+/* ══════════════════════════════════════════════
+   THERMAL RECEIPT
+══════════════════════════════════════════════ */
+.receipt-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;align-items:center;justify-content:center;padding:16px;overflow-y:auto;}
+.receipt-overlay.show{display:flex;}
+
+/* Thermal paper simulation */
+.receipt-wrap{
+  background:#fff;color:#000;
+  width:100%;max-width:320px;
+  margin:auto;
+  font-family:'Courier New',Courier,monospace;
+  font-size:12px;line-height:1.55;
+  box-shadow:0 0 40px rgba(34,197,94,0.35),4px 4px 0 #ccc;
+  border-radius:2px;
+}
+.r-body{padding:14px 14px 10px;}
+.r-center{text-align:center;}
+.r-bold{font-weight:700;}
+.r-divider{border:none;border-top:1px dashed #999;margin:7px 0;}
+.r-divider-solid{border:none;border-top:1px solid #000;margin:7px 0;}
+.r-row{display:flex;justify-content:space-between;align-items:baseline;}
+.r-row-indent{display:flex;justify-content:space-between;padding-left:10px;font-size:11px;color:#444;}
+.r-name{font-weight:700;font-size:13px;}
+.r-total-row{display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-top:2px;}
+.r-roff{display:flex;justify-content:space-between;font-size:11px;color:#666;}
+.r-grand{display:flex;justify-content:space-between;font-weight:700;font-size:15px;border-top:2px solid #000;border-bottom:2px solid #000;padding:4px 0;margin:4px 0;}
+
+.receipt-actions{display:flex;gap:8px;justify-content:center;padding:12px 14px;background:#f0f0f0;border-top:1px dashed #ccc;flex-wrap:wrap;}
+.r-btn{padding:8px 16px;border:none;border-radius:4px;cursor:pointer;font-family:var(--head);font-weight:600;font-size:13px;}
+.r-btn-green{background:#22c55e;color:#0a0f0a;}
+.r-btn-gray{background:#ddd;color:#333;}
+
+/* Patient name required highlight */
+.field-input.required-empty{border-color:var(--red)!important;animation:shake 0.4s;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ── Print: only receipt ── */
+@media print{
+  body>*{display:none!important;}
+  .receipt-overlay{display:flex!important;position:static!important;background:none!important;padding:0!important;}
+  .receipt-wrap{box-shadow:none!important;max-width:100%!important;}
+  .receipt-actions{display:none!important;}
+  @page{size:80mm auto;margin:4mm;}
+}
+
+@media(max-width:500px){
+  .items-header,.item-row{grid-template-columns:1.6fr 36px 36px 44px 46px 60px 24px;font-size:11px;padding:7px 6px;}
+  .patient-grid{grid-template-columns:1fr;}
+  .manual-grid{grid-template-columns:1fr 1fr 1fr;}
+  .manual-grid input:first-child{grid-column:1/-1;}
+  .r-patient-strip{grid-template-columns:1fr;}
+  .r-info-strip{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="store-name">Sahyog Medical Store</div>
+  <div class="store-tagline">Licensed Retail Pharmacy</div>
+  <div class="store-addr" id="storeAddr">Khargone, Madhya Pradesh — Ph: 07282-XXXXXX</div>
+  <div class="bill-meta">
+    <span id="dateDisplay">—</span>
+    <span class="bill-no" id="billNo">BILL #—</span>
+    <span id="timeDisplay">—</span>
+  </div>
+</div>
+
+<!-- ── STATUS ── -->
+<div class="status-bar">
+  <div class="status-dot" id="statusDot"></div>
+  <div class="status-text" id="statusText">Ready. Press 🎤 to start voice billing.</div>
+</div>
+
+<!-- ── MIC ── -->
+<div class="mic-section">
+  <button class="mic-btn" id="micBtn" onclick="toggleListening()">
+    <div class="mic-ripple"></div>
+    <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 19.93A9 9 0 0 1 3.06 13H5.1a7 7 0 0 0 13.8 0h2.04A9 9 0 0 1 13 20.93V23h-2v-2.07z"/></svg>
+    <span class="mic-label" id="micLabel">START</span>
+  </button>
+</div>
+
+<!-- ── ASK BANNER ── -->
+<div class="ask-banner" id="askBanner">
+  <div class="ask-icon">🎙️</div>
+  <div class="ask-body">
+    <div class="ask-q" id="askQuestion">—</div>
+    <div class="ask-sub">Bolo mic mein — ya neeche type karo</div>
+    <div class="ask-input-row">
+      <input class="ask-txt" id="askInput" placeholder="Type here..." onkeydown="if(event.key==='Enter') submitAskInput()">
+      <button class="ask-ok" onclick="submitAskInput()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PATIENT / DOCTOR CARD ── -->
+<div class="patient-card">
+  <div class="card-title">👤 Patient &amp; Prescription Details</div>
+  <div class="patient-grid">
+
+    <div class="field-wrap">
+      <div class="field-label">Patient Name</div>
+      <div class="field-row">
+        <input class="field-input" id="f_patient" placeholder="Patient ka naam..." oninput="this.classList.toggle('filled',this.value.trim().length>0)">
+        <button class="voice-field-btn" onclick="voiceFieldCapture('patient')" id="vbtn_patient" title="Mic se bolo">
+          <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 19.93A9 9 0 0 1 3.06 13H5.1a7 7 0 0 0 13.8 0h2.04A9 9 0 0 1 13 20.93V23h-2v-2.07z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="field-wrap">
+      <div class="field-label">Doctor Name</div>
+      <div class="field-row">
+        <input class="field-input" id="f_doctor" placeholder="Dr. naam..." oninput="this.classList.toggle('filled',this.value.trim().length>0)">
+        <button class="voice-field-btn" onclick="voiceFieldCapture('doctor')" id="vbtn_doctor" title="Mic se bolo">
+          <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 19.93A9 9 0 0 1 3.06 13H5.1a7 7 0 0 0 13.8 0h2.04A9 9 0 0 1 13 20.93V23h-2v-2.07z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="field-wrap">
+      <div class="field-label">Mobile (Optional)</div>
+      <div class="field-row">
+        <input class="field-input" id="f_mobile" placeholder="Patient mobile..." type="tel" oninput="this.classList.toggle('filled',this.value.trim().length>0)">
+      </div>
+    </div>
+
+    <div class="field-wrap full">
+      <div class="field-label">Address (Optional)</div>
+      <div class="field-row">
+        <input class="field-input" id="f_address" placeholder="Patient address..." oninput="this.classList.toggle('filled',this.value.trim().length>0)">
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── VOICE HELP ── -->
+<div class="help-strip">
+  <strong>Medicine Commands:</strong>
+  <span class="cmd">"Dolo 650 2 strip 20 rupees"</span>
+  <span class="cmd">"Crocin 3 tablet 10 tab strip 25"</span>
+  <span class="cmd">"Paracetamol 1 strip 2 tablet 10 tab strip 30"</span><br>
+  <strong>Patient Commands:</strong>
+  <span class="cmd">"patient name Ramesh Kumar"</span>
+  <span class="cmd">"doctor name Dr. Sharma"</span><br>
+  <strong>Controls:</strong>
+  <span class="cmd">"last item remove"</span>
+  <span class="cmd">"clear bill"</span>
+  <span class="cmd">"bill complete"</span>
+</div>
+
+<!-- ── MANUAL ENTRY ── -->
+<div class="manual-toggle">
+  <span class="manual-link" onclick="toggleManual()">✏ Manual medicine entry</span>
+</div>
+<div class="manual-form" id="manualForm">
+  <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:var(--mono)">Manual Item Entry</div>
+  <div class="manual-grid">
+    <input class="manual-input" id="m_name" placeholder="Medicine name">
+    <input class="manual-input" id="m_strip" placeholder="Strips" type="number" min="0" value="0">
+    <input class="manual-input" id="m_tablet" placeholder="Loose tabs" type="number" min="0" value="0">
+    <input class="manual-input" id="m_tabsps" placeholder="Tabs/Strip" type="number" min="1">
+    <input class="manual-input" id="m_mrp" placeholder="MRP/strip ₹" type="number" min="0">
+  </div>
+  <button class="btn btn-ghost" style="width:100%;font-size:12px;padding:8px" onclick="addManualItem()">+ Add Item</button>
+</div>
+
+<!-- ── ITEMS TABLE ── -->
+<div class="items-section">
+  <div class="items-header">
+    <span>Medicine</span>
+    <span style="text-align:center">Strip</span>
+    <span style="text-align:center">Tab</span>
+    <span style="text-align:center">T/Str</span>
+    <span style="text-align:center">MRP</span>
+    <span style="text-align:right">Total</span>
+    <span></span>
+  </div>
+  <div class="items-list" id="itemsList">
+    <div class="empty-state">
+      <div class="empty-icon">💊</div>
+      <div>No items. Start voice billing or use manual entry.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOTALS ── -->
+<div class="totals-block" id="totalsBlock" style="display:none">
+  <div class="item-count-badge" id="itemCount">0 items</div>
+  <div class="totals-row sub"><span>Sub Total</span><span id="rawTotal">₹0.00</span></div>
+  <div class="totals-row discount-row">
+    <span>Discount</span>
+    <span style="display:flex;align-items:center;gap:6px">
+      <input id="discountInput" type="number" min="0" value="0" step="1"
+        style="width:64px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-family:var(--mono);font-size:12px;text-align:right;outline:none"
+        oninput="renderItems()">
+      <button id="discTypeBtn" onclick="toggleDiscType()"
+        style="background:var(--accent-dim);border:1px solid rgba(34,197,94,0.4);color:var(--accent);border-radius:4px;padding:3px 8px;font-family:var(--mono);font-size:12px;cursor:pointer;font-weight:600;min-width:28px">%</button>
+      <span id="discountAmt" style="min-width:52px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--red)">-₹0.00</span>
+    </span>
+  </div>
+  <div class="totals-row roundoff"><span>Round Off</span><span id="roundOff">+₹0.00</span></div>
+  <div class="totals-row final"><span>TOTAL</span><span class="val" id="totalAmount">₹0</span></div>
+</div>
+
+<!-- ── ACTIONS ── -->
+<div class="actions">
+  <button class="btn btn-primary" id="printBtn" onclick="showReceipt()" disabled>🖨 Generate Bill</button>
+  <button class="btn btn-ghost" onclick="clearBill()">🗑 Clear All</button>
+</div>
+
+<div class="sheets-status" id="sheetsStatus">Google Sheets: configure GOOGLE_SHEET_SCRIPT_URL in CONFIG</div>
+
+</div><!-- /container -->
+
+<!-- ══════════════════════════════════════════════
+     THERMAL RECEIPT
+══════════════════════════════════════════════ -->
+<div class="receipt-overlay" id="receiptOverlay">
+  <div class="receipt-wrap">
+
+    <div class="r-body" id="receiptContent"><!-- filled by JS --></div>
+    <div class="receipt-actions">
+      <button class="r-btn r-btn-green" onclick="printBluetooth()">🖨 BT Print</button>
+      <button class="r-btn r-btn-green" onclick="window.print()">🖨 Print</button>
+      <button class="r-btn r-btn-gray" onclick="closeReceipt()">✕ Close</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════
+     CONFIG — edit these values
+══════════════════════════════════════════════ -->
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const CONFIG = {
+  GEMINI_API_KEY:          "AIzaSyCcFX7Qs0Zc61foXlDLNngks3IwxZE3QiE",
+  GOOGLE_SHEET_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyCa_siNUXJbP6hCcoUcxUOj8cq54OjFl2GrOeZG2G3gMRMOphiyqe2BxLTiIbTE7uB/exec",
+  BILL_PREFIX:             "SAHYOG",
+
+  // Store details (shown on bill)
+  STORE_NAME:    "Sahyog Medical Store",
+  STORE_ADDR:    "Manasa, Madhya Pradesh - 458110",
+  STORE_PHONE:   "7415543744",
+  STORE_EMAIL:   "",
+  STORE_GSTIN:   "23BUQPS8562N1ZL",
+  STORE_DL1:     "",
+  STORE_DL2:     "",
+};
+
+// ═══════════════════════════════════════════════════
+//  VOICE CORRECTIONS DICTIONARY
+// ═══════════════════════════════════════════════════
+const VOICE_CORRECTIONS = {
+  "six fifty":"650","five hundred":"500","two fifty":"250","two hundred fifty":"250",
+  "one thousand":"1000","seven fifty":"750","one fifty":"150","seventy five":"75",
+  "pcm":"Paracetamol","p c m":"Paracetamol","azee":"Azithromycin","azimax":"Azithromycin",
+  "amoxy":"Amoxicillin","levoflox":"Levofloxacin","cipro":"Ciprofloxacin",
+  "pantofast":"Pantoprazole","pan 40":"Pantoprazole 40","pan":"Pantoprazole",
+  "rantac":"Ranitidine","omez":"Omeprazole","montek lc":"Montelukast LC",
+  "allegra":"Fexofenadine","cetzine":"Cetirizine","cetrizine":"Cetirizine",
+  "combi flame":"Combiflam","combifleam":"Combiflam",
+  "dolo six fifty":"Dolo 650","crosin":"Crocin","ibuprofin":"Ibuprofen",
+  "atorva":"Atorvastatin","beco suels":"Becosules","beco souls":"Becosules",
+  "metro":"Metronidazole","flagyl":"Metronidazole",
+  "vitamin c":"Vitamin C","vitamin d":"Vitamin D","vitamin b12":"Vitamin B12",
+};
+
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+let items = [];
+let billCounter = parseInt(localStorage.getItem('sms_bill_counter') || '1');
+let isListening = false;
+let recognition = null;
+let pendingItem = null;
+let pendingField = null;
+let fieldMicActive = false;
+let fieldMicTarget = null;
+let fieldMicRec = null;
+let btDevice = null;
+
+// ═══════════════════════════════════════════════════
+//  STORE DETAILS INIT
+// ═══════════════════════════════════════════════════
+function initApp() {
+  const el = document.getElementById('storeAddr');
+  if (el) el.textContent = `${CONFIG.STORE_ADDR} — Ph: ${CONFIG.STORE_PHONE}`;
+}
+
+// ═══════════════════════════════════════════════════
+//  CLOCK
+// ═══════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'});
+  document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('billNo').textContent = `BILL #${CONFIG.BILL_PREFIX}-${String(billCounter).padStart(3,'0')}`;
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ═══════════════════════════════════════════════════
+//  STATUS / TOAST
+// ═══════════════════════════════════════════════════
+function setStatus(state, msg) {
+  document.getElementById('statusDot').className = 'status-dot' + (state ? ' '+state : '');
+  document.getElementById('statusText').innerHTML = msg;
+}
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (type ? ' '+type : '');
+  setTimeout(() => t.className = 'toast', 2600);
+}
+function markFilled(el) {
+  el.classList.toggle('filled', el.value.trim().length > 0);
+}
+
+// ═══════════════════════════════════════════════════
+//  VOICE — MAIN BILLING MIC
+// ═══════════════════════════════════════════════════
+function toggleListening() {
+  isListening ? stopListening() : startListening();
+}
+function startListening() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { setStatus('error', 'Speech Recognition not supported. Use Chrome on Android.'); return; }
+  recognition = new SR();
+  recognition.lang = 'hi-IN';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('micBtn').classList.add('active');
+    document.getElementById('micLabel').textContent = 'STOP';
+    setStatus('listening', 'Sun raha hoon... bolo medicine ya patient ka naam.');
+  };
+  recognition.onresult = (e) => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t; else interim += t;
+    }
+    if (interim) setStatus('listening', `<span class="transcript-live">"${interim}"</span>`);
+    if (final.trim()) handleVoiceInput(final.trim().toLowerCase());
+  };
+  recognition.onerror = (e) => { if (e.error !== 'no-speech') { setStatus('error', 'Voice error: '+e.error); stopListening(); } };
+  recognition.onend = () => { if (isListening) recognition.start(); };
+  recognition.start();
+}
+function stopListening() {
+  isListening = false;
+  if (recognition) { recognition.stop(); recognition = null; }
+  document.getElementById('micBtn').classList.remove('active');
+  document.getElementById('micLabel').textContent = 'START';
+  setStatus('', 'Stopped. Press 🎤 to listen again.');
+  hideBanner();
+}
+
+// ═══════════════════════════════════════════════════
+//  VOICE — FIELD MIC (patient / doctor name)
+// ═══════════════════════════════════════════════════
+function voiceFieldCapture(fieldKey) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('Speech API not supported', 'error'); return; }
+
+  const btn = document.getElementById('vbtn_' + fieldKey);
+  const inputEl = document.getElementById('f_' + fieldKey);
+
+  if (fieldMicActive && fieldMicTarget === fieldKey) {
+    // Stop
+    if (fieldMicRec) fieldMicRec.stop();
+    btn.classList.remove('recording');
+    fieldMicActive = false; fieldMicTarget = null;
+    return;
+  }
+
+  // Stop any other field mic
+  if (fieldMicRec) fieldMicRec.stop();
+  document.querySelectorAll('.voice-field-btn').forEach(b => b.classList.remove('recording'));
+
+  fieldMicActive = true;
+  fieldMicTarget = fieldKey;
+  btn.classList.add('recording');
+
+  fieldMicRec = new SR();
+  fieldMicRec.lang = 'hi-IN';
+  fieldMicRec.continuous = false;
+  fieldMicRec.interimResults = true;
+
+  fieldMicRec.onresult = (e) => {
+    let final = '';
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+    }
+    if (final) {
+      const cleaned = toTitleCase(final.trim()
+        .replace(/\bdr\b/gi, 'Dr.')
+        .replace(/\bdoctor\b/gi, 'Dr.')
+      );
+      inputEl.value = cleaned;
+      markFilled(inputEl);
+      showToast(`${fieldKey === 'patient' ? 'Patient' : 'Doctor'}: ${cleaned}`, 'success');
+    }
+  };
+  fieldMicRec.onend = () => {
+    btn.classList.remove('recording');
+    fieldMicActive = false; fieldMicTarget = null;
+  };
+  fieldMicRec.onerror = () => { btn.classList.remove('recording'); fieldMicActive = false; };
+  fieldMicRec.start();
+  showToast(`${fieldKey === 'patient' ? 'Patient ka naam' : 'Doctor ka naam'} bolo...`);
+}
+
+// ═══════════════════════════════════════════════════
+//  VOICE INPUT ROUTER
+// ═══════════════════════════════════════════════════
+function handleVoiceInput(raw) {
+  const text = applyCorrections(raw.trim());
+  if (!text) return;
+  setStatus('thinking', `Processing: <span class="transcript-live">"${text}"</span>`);
+
+  // ── PATIENT/DOCTOR COMMANDS ──
+  let m;
+  m = text.match(/patient\s+(?:name\s+)?(.+)/i);
+  if (m) {
+    const name = toTitleCase(m[1].replace(/\b(ka naam|name)\b/gi,'').trim());
+    document.getElementById('f_patient').value = name;
+    document.getElementById('f_patient').classList.add('filled');
+    setStatus('listening', `✓ Patient: ${name}`);
+    speak(`Patient ${name} set ho gaya`); return;
+  }
+  m = text.match(/doctor\s+(?:name\s+)?(?:dr\.?\s+)?(.+)/i);
+  if (m) {
+    const name = 'Dr. ' + toTitleCase(m[1].replace(/^dr\.?\s+/i,'').trim());
+    document.getElementById('f_doctor').value = name;
+    document.getElementById('f_doctor').classList.add('filled');
+    setStatus('listening', `✓ Doctor: ${name}`);
+    speak(`Doctor ${name} set ho gaya`); return;
+  }
+
+  // ── SPECIAL COMMANDS ──
+  if (/bill\s*(complete|done|finish|ho\s*gaya|khatam|puri)/i.test(text)) {
+    stopListening(); if (items.length > 0) showReceipt(); return;
+  }
+  if (/clear\s*(bill|sab|all)/i.test(text)) {
+    items = []; renderItems();
+    setStatus('listening', 'Bill cleared.'); speak('Bill clear ho gaya'); return;
+  }
+  if (/last\s*item\s*(remove|delete|hata|nikal)/i.test(text)) {
+    if (items.length) { const r = items.pop(); renderItems(); setStatus('listening', `"${r.name}" removed.`); speak(`${r.name} remove ho gaya`); }
+    else setStatus('listening', 'No items to remove.');
+    return;
+  }
+
+  // ── PENDING FOLLOW-UP ──
+  if (pendingItem !== null && pendingField !== null) { fillPendingField(text); return; }
+
+  // ── PARSE: 1.Regex → 2.AI ──
+  const parsed = parseVoiceText(text);
+  if (parsed) {
+    handleParsed(parsed);
+  } else if (CONFIG.GEMINI_API_KEY && !CONFIG.GEMINI_API_KEY.startsWith('YOUR_')) {
+    aiParse(text);
+  } else {
+    setStatus('error', `Parse failed: "${text}". Try: "Dolo 650 2 strip 34 rupees"`);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  CORRECTIONS + UTILITIES
+// ═══════════════════════════════════════════════════
+function applyCorrections(text) {
+  let r = text;
+  const nums = {'ek':'1','do':'2','teen':'3','char':'4','paanch':'5','chhe':'6','saat':'7','aath':'8','nau':'9','das':'10','eleven':'11','twelve':'12','fifteen':'15','twenty':'20','thirty':'30','fifty':'50','hundred':'100','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9','ten':'10'};
+  Object.entries(nums).forEach(([w,n]) => r = r.replace(new RegExp('\\b'+w+'\\b','gi'), n));
+  Object.entries(VOICE_CORRECTIONS).forEach(([w,c]) => r = r.replace(new RegExp('\\b'+w+'\\b','gi'), c));
+  return r;
+}
+function toTitleCase(str) {
+  return str.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase())
+    .replace(/\bDr\b/gi, 'Dr.').replace(/\bDr\.\./g, 'Dr.');
+}
+
+// ═══════════════════════════════════════════════════
+//  REGEX PARSER
+// ═══════════════════════════════════════════════════
+function parseVoiceText(text) {
+  const t = text
+    .replace(/tablets?\s+per\s+strip/gi,'TPS').replace(/tabs?\s+per\s+strip/gi,'TPS')
+    .replace(/tablets?\s+strip/gi,'TPS').replace(/tabs?\s+strip/gi,'TPS');
+  let m;
+  // Mixed: "Dolo 1 strip 3 tablet 10 TPS 20"
+  m = t.match(/^(.+?)\s+(\d+)\s+strips?\s+(\d+)\s+tablets?\s+(?:TPS\s+)?(\d+)\s+(?:TPS\s+)?(\d+(?:\.\d+)?)/i);
+  if (m) return {name:cleanName(m[1]),strip_qty:+m[2],tablet_qty:+m[3],tabs_per_strip:+m[4],strip_price:+m[5]};
+  // Strip only: "Dolo 2 strip 34"
+  m = t.match(/^(.+?)\s+(\d+)\s+strips?\s+(\d+(?:\.\d+)?)/i);
+  if (m) return {name:cleanName(m[1]),strip_qty:+m[2],tablet_qty:0,tabs_per_strip:null,strip_price:+m[3]};
+  // Loose tablets: "Dolo 3 tablet 10 TPS 20"
+  m = t.match(/^(.+?)\s+(\d+)\s+tablets?\s+(?:TPS\s+)?(\d+)\s+(?:TPS\s+)?(\d+(?:\.\d+)?)/i);
+  if (m) return {name:cleanName(m[1]),strip_qty:0,tablet_qty:+m[2],tabs_per_strip:+m[3],strip_price:+m[4]};
+  // Minimal: "Dolo 2 34"
+  m = t.match(/^(.+?)\s+(\d+)\s+(\d+(?:\.\d+)?)\s*(?:rupees|rs|₹)?$/i);
+  if (m) return {name:cleanName(m[1]),strip_qty:+m[2],tablet_qty:0,tabs_per_strip:null,strip_price:+m[3]};
+  return null;
+}
+function cleanName(n) {
+  return n.replace(/\b(dolo|crocin|paracetamol|combiflam|ibuprofen|metformin|atorvastatin|aspirin|omeprazole|pantoprazole|azithromycin|cetirizine|montelukast|amoxicillin|levofloxacin|becosules|ranitidine|fexofenadine|metronidazole)\b/gi, m => m[0].toUpperCase()+m.slice(1).toLowerCase()).replace(/\s+/g,' ').trim();
+}
+
+// ═══════════════════════════════════════════════════
+//  AI FALLBACK (Gemini)
+// ═══════════════════════════════════════════════════
+async function aiParse(text) {
+  setStatus('thinking', 'AI parse karta hai...');
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${CONFIG.GEMINI_API_KEY}`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({contents:[{parts:[{text:`Extract medicine billing from Hindi/Hinglish: "${text}"\nReturn ONLY JSON (no markdown):\n{"name":"","strip_qty":0,"tablet_qty":0,"tabs_per_strip":null,"strip_price":0}`}]}]})
+    });
+    const data = await res.json();
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    if (parsed?.name && parsed?.strip_price) { handleParsed(parsed); setStatus('listening', `AI: ${parsed.name} parsed!`); }
+    else askFollowUp(parsed || {});
+  } catch(e) { setStatus('error', 'AI parse failed. Manual entry use karo.'); }
+}
+
+// ═══════════════════════════════════════════════════
+//  FOLLOW-UP Q&A
+// ═══════════════════════════════════════════════════
+function handleParsed(parsed) {
+  if (!parsed.name)       { pendingItem=parsed; askFor('Medicine ka naam?','name'); return; }
+  if (!parsed.strip_price){ pendingItem=parsed; askFor('MRP kya hai (₹ per strip)?','strip_price'); return; }
+  if (parsed.tablet_qty>0 && !parsed.tabs_per_strip){ pendingItem=parsed; askFor('Ek strip mein kitne tablet?','tabs_per_strip'); return; }
+  pushItem(parsed);
+  speak(`${parsed.name} add ho gaya`);
+  setStatus('listening', `✓ ${parsed.name} — ₹${calcItem(parsed).total.toFixed(2)}. Next medicine bolo...`);
+}
+function askFor(question, field) {
+  pendingField = field;
+  document.getElementById('askQuestion').textContent = question;
+  document.getElementById('askInput').value = '';
+  document.getElementById('askBanner').classList.add('show');
+  setTimeout(() => document.getElementById('askInput').focus(), 100);
+  speak(question);
+}
+function hideBanner() {
+  document.getElementById('askBanner').classList.remove('show');
+  pendingField = null;
+}
+function submitAskInput() {
+  const val = document.getElementById('askInput').value.trim();
+  if (val) fillPendingField(val);
+}
+function fillPendingField(text) {
+  const num = parseFloat(text.replace(/[^0-9.]/g,''));
+  if (pendingField==='name')          pendingItem.name = toTitleCase(text.trim());
+  else if (pendingField==='strip_qty')    pendingItem.strip_qty = num||0;
+  else if (pendingField==='tablet_qty')   pendingItem.tablet_qty = num||0;
+  else if (pendingField==='tabs_per_strip') pendingItem.tabs_per_strip = num||null;
+  else if (pendingField==='strip_price')  pendingItem.strip_price = num||0;
+  hideBanner();
+  const copy = {...pendingItem}; pendingItem = null;
+  handleParsed(copy);
+}
+function askFollowUp(parsed) {
+  pendingItem = parsed;
+  if (!parsed.name)         { askFor('Medicine ka naam?','name'); return; }
+  if (!parsed.strip_price)  { askFor('MRP kya hai?','strip_price'); return; }
+  if (parsed.tablet_qty>0 && !parsed.tabs_per_strip) { askFor('Ek strip mein kitne tablet?','tabs_per_strip'); return; }
+  pushItem(parsed);
+}
+
+// ═══════════════════════════════════════════════════
+//  CALCULATION ENGINE
+// ═══════════════════════════════════════════════════
+function calcItem(item) {
+  const sq = item.strip_qty||0, tq = item.tablet_qty||0;
+  const tps = item.tabs_per_strip||null, sp = item.strip_price||0;
+  const tp = (tps && sp) ? sp/tps : 0;
+  return { name:item.name||'Unknown', strip_qty:sq, tablet_qty:tq, tabs_per_strip:tps, strip_price:sp,
+           tablet_price:tp, strip_total:sq*sp, tablet_total:tq*tp, total:sq*sp+tq*tp };
+}
+function pushItem(raw) {
+  const e = calcItem(raw); items.push(e); renderItems();
+  showToast(`${e.name} added — ₹${e.total.toFixed(2)}`,'success');
+}
+function deleteItem(idx) { items.splice(idx,1); renderItems(); }
+function addManualItem() {
+  const name = document.getElementById('m_name').value.trim();
+  const strips = parseFloat(document.getElementById('m_strip').value)||0;
+  const tabs = parseFloat(document.getElementById('m_tablet').value)||0;
+  const tps = parseFloat(document.getElementById('m_tabsps').value)||null;
+  const mrp = parseFloat(document.getElementById('m_mrp').value)||0;
+  if (!name) { showToast('Medicine name required','error'); return; }
+  if (!mrp)  { showToast('MRP required','error'); return; }
+  pushItem({name,strip_qty:strips,tablet_qty:tabs,tabs_per_strip:tps,strip_price:mrp});
+  ['m_name','m_strip','m_tablet','m_tabsps','m_mrp'].forEach(id => {
+    const el = document.getElementById(id); el.value = id==='m_strip'||id==='m_tablet' ? '0' : '';
+  });
+}
+function toggleManual() { document.getElementById('manualForm').classList.toggle('show'); }
+
+// ═══════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════
+// ── DISCOUNT TYPE TOGGLE ──
+let discType = 'pct'; // 'pct' or 'amt'
+function toggleDiscType() {
+  discType = discType === 'pct' ? 'amt' : 'pct';
+  const btn = document.getElementById('discTypeBtn');
+  const inp = document.getElementById('discountInput');
+  if (discType === 'pct') {
+    btn.textContent = '%';
+    inp.max = 100; inp.step = 1;
+  } else {
+    btn.textContent = '₹';
+    inp.removeAttribute('max'); inp.step = 1;
+  }
+  inp.value = 0;
+  renderItems();
+}
+
+function getDiscountAmt(subTotal) {
+  const val = Math.max(0, parseFloat(document.getElementById('discountInput')?.value || 0) || 0);
+  if (discType === 'pct') {
+    const pct = Math.min(100, val);
+    return { amt: subTotal * pct / 100, pct };
+  } else {
+    const amt = Math.min(subTotal, val);
+    return { amt, pct: subTotal > 0 ? (amt / subTotal * 100) : 0 };
+  }
+}
+
+function renderItems() {
+  const list = document.getElementById('itemsList');
+  const tb = document.getElementById('totalsBlock');
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">💊</div><div>No items yet.</div></div>`;
+    tb.style.display='none'; document.getElementById('printBtn').disabled=true; return;
+  }
+  list.innerHTML = items.map((item,idx) => {
+    const parts=[];
+    if (item.strip_qty>0) parts.push(`${item.strip_qty}str×₹${item.strip_price}`);
+    if (item.tablet_qty>0&&item.tablet_price>0) parts.push(`${item.tablet_qty}tab×₹${item.tablet_price.toFixed(2)}`);
+    return `<div class="item-row">
+      <span class="item-name">${item.name}<small>${parts.join(' + ')}</small></span>
+      <span class="item-num">${item.strip_qty||'—'}</span>
+      <span class="item-num ${item.tablet_qty?'':'dim'}">${item.tablet_qty||'—'}</span>
+      <span class="item-num ${item.tabs_per_strip?'':'dim'}">${item.tabs_per_strip||'—'}</span>
+      <span class="item-num">₹${item.strip_price}</span>
+      <span class="item-total">₹${item.total.toFixed(2)}</span>
+      <button class="del-btn" onclick="deleteItem(${idx})">×</button>
+    </div>`;
+  }).join('');
+
+  const subTotal   = items.reduce((s,i)=>s+i.total, 0);
+  const { amt: discAmt, pct: discPct } = getDiscountAmt(subTotal);
+  const afterDisc  = subTotal - discAmt;
+  const rounded    = Math.round(afterDisc);
+  const roff       = rounded - afterDisc;
+
+  document.getElementById('rawTotal').textContent    = `₹${subTotal.toFixed(2)}`;
+  document.getElementById('discountAmt').textContent = `-₹${discAmt.toFixed(2)}`;
+  document.getElementById('roundOff').textContent    = `${roff>=0?'+':''}₹${roff.toFixed(2)}`;
+  document.getElementById('totalAmount').textContent = `₹${rounded}`;
+  document.getElementById('itemCount').textContent   = `${items.length} item${items.length!==1?'s':''}`;
+  tb.style.display='block'; document.getElementById('printBtn').disabled=false;
+}
+
+function clearBill() {
+  items = [];
+  discType = 'pct';
+  const di = document.getElementById('discountInput');
+  const db = document.getElementById('discTypeBtn');
+  if (di) { di.value = '0'; di.max = 100; di.step = 1; }
+  if (db) { db.textContent = '%'; }
+  renderItems();
+  ['f_patient','f_doctor','f_mobile','f_address'].forEach(id=>{
+    const el = document.getElementById(id);
+    if (el) { el.value=''; el.classList.remove('filled'); }
+  });
+  setStatus('','Bill cleared. Ready.');
+}
+
+// ═══════════════════════════════════════════════════
+//  THERMAL RECEIPT BUILDER
+// ═══════════════════════════════════════════════════
+function showReceipt() {
+  // Patient name is MANDATORY
+  const patientEl = document.getElementById('f_patient');
+  const patient = patientEl.value.trim();
+  if (!patient) {
+    patientEl.classList.add('required-empty');
+    patientEl.focus();
+    showToast('Patient ka naam zaroori hai!', 'error');
+    speak('Patient ka naam bharo');
+    setTimeout(() => patientEl.classList.remove('required-empty'), 600);
+    return;
+  }
+
+  const now    = new Date();
+  const date   = now.toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const time   = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const billNo = `${CONFIG.BILL_PREFIX}-${String(billCounter).padStart(3,'0')}`;
+  const doctor = document.getElementById('f_doctor').value.trim();
+  const mobile = document.getElementById('f_mobile').value.trim();
+
+  const subTotal  = items.reduce((s,i)=>s+i.total, 0);
+  const { amt: discAmt, pct: discPct } = getDiscountAmt(subTotal);
+  const afterDisc = subTotal - discAmt;
+  const rounded   = Math.round(afterDisc);
+  const roff      = rounded - afterDisc;
+
+  let itemLines = '';
+  items.forEach((it, idx) => {
+    itemLines += `<div class="r-row"><span class="r-bold">${idx+1}. ${it.name}</span></div>`;
+    if (it.strip_qty > 0) itemLines += `<div class="r-row-indent"><span>${it.strip_qty} strip x Rs.${it.strip_price}</span><span>Rs.${it.strip_total.toFixed(2)}</span></div>`;
+    if (it.tablet_qty > 0) itemLines += `<div class="r-row-indent"><span>${it.tablet_qty} tab x Rs.${it.tablet_price.toFixed(2)}</span><span>Rs.${it.tablet_total.toFixed(2)}</span></div>`;
+  });
+
+  const discLabel  = discType === 'pct'
+    ? `Discount (${discPct.toFixed(1)}%)`
+    : `Discount`;
+  const discLine   = discAmt > 0 ? `<div class="r-roff"><span>${discLabel}</span><span>-Rs.${discAmt.toFixed(2)}</span></div>` : '';
+  const roundOffLine = Math.abs(roff) > 0.001 ? `<div class="r-roff"><span>Round Off</span><span>${roff>=0?'+':''}Rs.${roff.toFixed(2)}</span></div>` : '';
+
+  document.getElementById('receiptContent').innerHTML = `
+    <div class="r-center">
+      <div class="r-name" style="font-size:15px">${CONFIG.STORE_NAME.toUpperCase()}</div>
+      <div style="font-size:11px">${CONFIG.STORE_ADDR}</div>
+      <div style="font-size:11px">Ph: ${CONFIG.STORE_PHONE}</div>
+      ${CONFIG.STORE_GSTIN ? `<div style="font-size:11px;font-weight:700">GSTIN: ${CONFIG.STORE_GSTIN}</div>` : ''}
+    </div>
+    <hr class="r-divider-solid" style="margin:8px 0 6px">
+    <div class="r-row"><span>Bill No:</span><span class="r-bold">${billNo}</span></div>
+    <div class="r-row"><span>Date  :</span><span>${date}</span></div>
+    <div class="r-row"><span>Time  :</span><span>${time}</span></div>
+    <hr class="r-divider">
+    <div class="r-row"><span>Patient:</span><span class="r-bold">${patient}</span></div>
+    ${doctor ? `<div class="r-row"><span>Doctor :</span><span>${doctor}</span></div>` : ''}
+    ${mobile ? `<div class="r-row"><span>Mobile :</span><span>${mobile}</span></div>` : ''}
+    <hr class="r-divider">
+    ${itemLines}
+    <hr class="r-divider">
+    <div class="r-row"><span>Sub Total</span><span>Rs.${subTotal.toFixed(2)}</span></div>
+    ${discLine}
+    ${roundOffLine}
+    <div class="r-grand"><span>TOTAL</span><span>Rs.${rounded}</span></div>
+    <hr class="r-divider" style="margin-top:8px">
+    <div class="r-center" style="font-size:11px;margin-top:6px">
+      Thank you! Get Well Soon 🙏
+    </div>
+  `;
+
+  document.getElementById('receiptOverlay').classList.add('show');
+  saveToSheets(billNo, date, time, subTotal, rounded, roff, patient, doctor, mobile,
+    document.getElementById('f_address').value.trim(), discPct, discAmt);
+  billCounter++;
+  localStorage.setItem('sms_bill_counter', billCounter);
+  updateClock();
+}
+function closeReceipt() { document.getElementById('receiptOverlay').classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════
+//  NUMBER TO WORDS
+// ═══════════════════════════════════════════════════
+function numberToWords(n) {
+  if (n===0) return 'Zero';
+  const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function h(num) {
+    if (num<20) return ones[num];
+    if (num<100) return tens[Math.floor(num/10)]+(num%10?' '+ones[num%10]:'');
+    return ones[Math.floor(num/100)]+' Hundred'+(num%100?' '+h(num%100):'');
+  }
+  let result='', rem=n;
+  if (rem>=10000000) { result+=h(Math.floor(rem/10000000))+' Crore '; rem%=10000000; }
+  if (rem>=100000)   { result+=h(Math.floor(rem/100000))+' Lakh '; rem%=100000; }
+  if (rem>=1000)     { result+=h(Math.floor(rem/1000))+' Thousand '; rem%=1000; }
+  if (rem>0)         { result+=h(rem); }
+  return result.trim();
+}
+
+// ═══════════════════════════════════════════════════
+//  BLUETOOTH PRINTING
+// ═══════════════════════════════════════════════════
+async function printBluetooth() {
+  if (!navigator.bluetooth) { showToast('Web Bluetooth not available — use Chrome Android','error'); window.print(); return; }
+  try {
+    setStatus('thinking','Bluetooth printer connect ho raha hai...');
+    btDevice = await navigator.bluetooth.requestDevice({
+      filters:[{services:['000018f0-0000-1000-8000-00805f9b34fb']},{namePrefix:'Printer'},{namePrefix:'MTP'},{namePrefix:'RPP'},{namePrefix:'BlueTooth'}],
+      optionalServices:['000018f0-0000-1000-8000-00805f9b34fb','e7810a71-73ae-499d-8c15-faa9aef0c3f2','00001800-0000-1000-8000-00805f9b34fb']
+    });
+    const server = await btDevice.gatt.connect();
+    setStatus('thinking','Printer connected. Printing...');
+    let char=null;
+    for (const p of [{svc:'000018f0-0000-1000-8000-00805f9b34fb',chr:'00002af1-0000-1000-8000-00805f9b34fb'},{svc:'e7810a71-73ae-499d-8c15-faa9aef0c3f2',chr:'bef8d6c9-9c21-4c9e-b632-bd58c1009f9f'}]) {
+      try { const s=await server.getPrimaryService(p.svc); char=await s.getCharacteristic(p.chr); break; } catch(e) {}
+    }
+    if (!char) throw new Error('Printer characteristic not found');
+    await writeChunked(char, buildEscPos());
+    showToast('Bill printed!','success'); setStatus('','Bill printed.');
+  } catch(e) { if (e.name!=='NotFoundError') showToast('BT Error: '+e.message,'error'); setStatus('','BT print failed. Use window.print().'); }
+}
+async function writeChunked(char, data) {
+  const CHUNK=100;
+  for (let i=0;i<data.length;i+=CHUNK) { await char.writeValue(data.slice(i,i+CHUNK)); await new Promise(r=>setTimeout(r,40)); }
+}
+function buildEscPos() {
+  const enc=new TextEncoder();
+  const now=new Date();
+  const date=now.toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const time=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const billNo=`${CONFIG.BILL_PREFIX}-${String(billCounter-1).padStart(3,'0')}`;
+  const patient=document.getElementById('f_patient').value.trim()||'—';
+  const doctor=document.getElementById('f_doctor').value.trim();
+  const subTotal=items.reduce((s,i)=>s+i.total,0);
+  const {amt:discAmt,pct:discPct}=getDiscountAmt(subTotal);
+  const afterDisc=subTotal-discAmt;
+  const rounded=Math.round(afterDisc), roff=rounded-afterDisc;
+  const ESC=0x1B,GS=0x1D;
+  const INIT=[ESC,0x40],CEN=[ESC,0x61,0x01],LFT=[ESC,0x61,0x00],BON=[ESC,0x45,0x01],BOFF=[ESC,0x45,0x00],CUT=[GS,0x56,0x41,0x03];
+  let c=[...INIT];
+  const A=a=>c.push(...a),T=t=>c.push(...enc.encode(t));
+  A(CEN);A(BON);T(`${CONFIG.STORE_NAME.toUpperCase()}\n`);A(BOFF);
+  T(`${CONFIG.STORE_ADDR}\n`);
+  T(`Ph: ${CONFIG.STORE_PHONE}\n`);
+  if(CONFIG.STORE_GSTIN) T(`GSTIN: ${CONFIG.STORE_GSTIN}\n`);
+  T('================================\n');
+  A(LFT);
+  T(`Bill No: ${billNo}\n`);
+  T(`Date   : ${date}  Time: ${time}\n`);
+  T('--------------------------------\n');
+  T(`Patient: ${patient}\n`);
+  if(doctor) T(`Doctor : ${doctor}\n`);
+  T('--------------------------------\n');
+  items.forEach((it,i)=>{
+    T(`${i+1}. ${it.name}\n`);
+    if(it.strip_qty>0)  T(`   ${it.strip_qty} strip x Rs.${it.strip_price} = Rs.${it.strip_total.toFixed(2)}\n`);
+    if(it.tablet_qty>0) T(`   ${it.tablet_qty} tab x Rs.${it.tablet_price.toFixed(2)} = Rs.${it.tablet_total.toFixed(2)}\n`);
+  });
+  T('--------------------------------\n');
+  T(`Sub Total      Rs.${subTotal.toFixed(2)}\n`);
+  if(discAmt>0) T(`Discount${discType==='pct'?` (${discPct.toFixed(1)}%)`:''}  -Rs.${discAmt.toFixed(2)}\n`);
+  if(Math.abs(roff)>0.001) T(`Round Off      ${roff>=0?'+':''}Rs.${roff.toFixed(2)}\n`);
+  T('================================\n');
+  A(BON);T(`TOTAL          Rs.${rounded}\n`);A(BOFF);
+  T('================================\n');
+  A(CEN);T('Medicines once sold not taken back.\n');
+  T('Thank you! Get Well Soon\n\n\n');
+  A(CUT);
+  return new Uint8Array(c);
+}
+
+// ═══════════════════════════════════════════════════
+//  GOOGLE SHEETS
+// ═══════════════════════════════════════════════════
+async function saveToSheets(billNo, date, time, subTotal, rounded, roff, patient, doctor, mobile, address, discPct, discAmt) {
+  const url = https://script.google.com/macros/s/AKfycbyCa_siNUXJbP6hCcoUcxUOj8cq54OjFl2GrOeZG2G3gMRMOphiyqe2BxLTiIbTE7uB/exec;
+  if (!url||url.startsWith('YOUR_')) { document.getElementById('sheetsStatus').textContent='⚠ GOOGLE_SHEET_SCRIPT_URL not configured'; return; }
+  document.getElementById('sheetsStatus').textContent='Syncing...';
+  document.getElementById('sheetsStatus').className='sheets-status';
+  const rows = items.map(it=>({
+    date, time, bill_no:billNo,
+    patient_name:patient, doctor_name:doctor, mobile,
+    medicine:it.name, strip_qty:it.strip_qty, tablet_qty:it.tablet_qty,
+    tabs_per_strip:it.tabs_per_strip, mrp:it.strip_price, item_total:it.total,
+    round_off:roff, discount_pct:discPct||0, discount_amt:discAmt||0, bill_total:rounded,
+  }));
+  try {
+    await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addBill',rows})});
+    document.getElementById('sheetsStatus').textContent=`✓ Saved: ${billNo}`;
+    document.getElementById('sheetsStatus').className='sheets-status ok';
+  } catch(e) {
+    document.getElementById('sheetsStatus').textContent='✕ Sheets sync failed';
+    document.getElementById('sheetsStatus').className='sheets-status err';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  TTS
+// ═══════════════════════════════════════════════════
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='hi-IN'; u.rate=1.1; u.volume=0.7;
+  window.speechSynthesis.speak(u);
+}
+
+// ── INIT ──
+initApp();
+renderItems();
+</script>
+</body>
+</html>
