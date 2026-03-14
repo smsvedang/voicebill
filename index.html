@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3</title>
+<title>Sahyog Medical – Voice Billing v3.1</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -486,7 +486,7 @@ function startListening() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { setStatus('error', 'Speech Recognition not supported. Use Chrome on Android.'); return; }
   recognition = new SR();
-  recognition.lang = 'hi-IN';
+  recognition.lang = 'en-IN';
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.onstart = () => {
@@ -544,7 +544,7 @@ function voiceFieldCapture(fieldKey) {
   btn.classList.add('recording');
 
   fieldMicRec = new SR();
-  fieldMicRec.lang = 'hi-IN';
+  fieldMicRec.lang = 'en-IN';
   fieldMicRec.continuous = false;
   fieldMicRec.interimResults = true;
 
@@ -674,150 +674,186 @@ function cleanName(n) {
 
 // ═══════════════════════════════════════════════════
 //  STEP-BY-STEP MIC WIZARD
-//  Har field ek alag step mein — mic se sunta hai
 // ═══════════════════════════════════════════════════
 
-// Steps order: name → strip_qty → strip_price → (tabs_per_strip if tablet_qty > 0)
-const STEPS = [
-  { field: 'name',          question: 'Medicine ka naam bolo',         hint: 'e.g. Dolo 650',        type: 'text' },
-  { field: 'strip_qty',     question: 'Kitni strip hai?',              hint: 'e.g. 2',               type: 'num'  },
-  { field: 'strip_price',   question: 'Ek strip ka MRP kya hai?',      hint: 'e.g. 34',              type: 'num'  },
-  { field: 'tabs_per_strip',question: 'Ek strip mein kitne tablet?',   hint: 'e.g. 10  (0 = skip)',  type: 'num'  },
-];
+// Medicine types
+// type: 'strip' = strip billing (most medicines)
+//       'syrup' = bottle/unit billing  
+//       'tablet' = loose tablets only
 
-let wizardStep = -1;   // current step index, -1 = not active
-let wizardItem = {};   // item being built
+const WIZARD_STEPS = {
+  name:          { question: 'Medicine ka naam bolo',              hint: 'e.g. Dolo 650, Crocin, Amoxicillin',  inputType: 'text' },
+  med_type:      { question: 'Type kya hai — Strip, Syrup, ya Tablet bolo', hint: 'Strip / Syrup / Tablet',   inputType: 'text' },
+  qty:           { question: 'Kitna quantity hai?',                hint: 'e.g. 2  (strips / bottles / tabs)',    inputType: 'num'  },
+  price:         { question: 'Price kya hai?',                     hint: 'e.g. 34  (Rs. per unit)',             inputType: 'num'  },
+  tabs_per_strip:{ question: 'Ek strip mein kitne tablet hain?',   hint: 'e.g. 10, 15 — tab count per strip',   inputType: 'num'  },
+};
+
+let wizardStep = -1;
+let wizardQueue = [];   // ordered list of step keys to ask
+let wizardItem  = {};
 let wizardMicRec = null;
 
-function startWizard(partialItem) {
-  wizardItem = partialItem || {};
-  wizardStep = -1;
-  nextWizardStep();
+function buildWizardQueue(partial) {
+  const q = [];
+  if (!partial.name)     q.push('name');
+  // med_type only if we don't already know from parse
+  if (!partial._type)    q.push('med_type');
+  if (partial.qty == null) q.push('qty');
+  if (!partial.price)    q.push('price');
+  // tabs_per_strip only for strip type and not already filled
+  if (!partial.tabs_per_strip) q.push('tabs_per_strip'); // will be conditionally skipped
+  return q;
 }
 
-function nextWizardStep() {
-  // Find next unfilled required step
-  for (let i = 0; i < STEPS.length; i++) {
-    const s = STEPS[i];
-    // Skip tabs_per_strip if no tablet_qty
-    if (s.field === 'tabs_per_strip' && !(wizardItem.tablet_qty > 0)) continue;
-    // Skip if already filled
-    if (s.field === 'name' && wizardItem.name) continue;
-    if (s.field === 'strip_qty' && wizardItem.strip_qty != null && wizardItem.strip_qty >= 0) continue;
-    if (s.field === 'strip_price' && wizardItem.strip_price) continue;
-    if (s.field === 'tabs_per_strip' && wizardItem.tabs_per_strip) continue;
-    // This step needs filling
-    wizardStep = i;
-    showWizardStep(s);
+function startWizard(partialItem) {
+  wizardItem = { ...partialItem };
+  wizardQueue = buildWizardQueue(wizardItem);
+  wizardStep = 0;
+  runNextWizardStep();
+}
+
+function runNextWizardStep() {
+  // Find next step that's still needed
+  while (wizardStep < wizardQueue.length) {
+    const key = wizardQueue[wizardStep];
+    // Skip tabs_per_strip if not strip type
+    if (key === 'tabs_per_strip') {
+      if (wizardItem._type !== 'strip') { wizardStep++; continue; }
+      if (wizardItem.tabs_per_strip)    { wizardStep++; continue; }
+    }
+    // Show this step
+    showWizardStep(key);
     return;
   }
-  // All filled — add item
-  wizardStep = -1;
-  hideBanner();
-  const copy = {...wizardItem};
-  wizardItem = {};
-  // Default strip_qty to 1 if somehow still missing
-  if (!copy.strip_qty) copy.strip_qty = 1;
-  pushItem(copy);
-  speak(copy.name + ' add ho gaya');
-  setStatus('listening', '✓ ' + copy.name + ' added. Next medicine bolo...');
+  // All done — finalize item
+  finalizeWizardItem();
 }
 
-function showWizardStep(step) {
-  const stepNum = STEPS.filter((s,i) => i <= wizardStep).length;
-  const totalSteps = STEPS.length;
+function finalizeWizardItem() {
+  wizardStep = -1;
+  hideBanner();
+  const it = wizardItem;
+  wizardItem = {};
+
+  const qty   = it.qty   || 1;
+  const price = it.price || 0;
+  const tps   = it.tabs_per_strip || null;
+  const type  = it._type || 'strip';
+
+  let entry;
+  if (type === 'syrup') {
+    // Syrup: qty = bottles, price = per bottle
+    entry = { name: it.name, strip_qty: qty, tablet_qty: 0, tabs_per_strip: null, strip_price: price };
+  } else if (type === 'tablet') {
+    // Loose tablets: need tabs_per_strip for calculation — treat each tablet as 1/tps of strip price
+    // Or just bill as: qty tablets × price per tablet
+    entry = { name: it.name, strip_qty: 0, tablet_qty: qty, tabs_per_strip: tps || 1, strip_price: price * (tps || 1) };
+  } else {
+    // Strip (default)
+    entry = { name: it.name, strip_qty: qty, tablet_qty: 0, tabs_per_strip: tps, strip_price: price };
+  }
+
+  pushItem(entry);
+  speak(it.name + ' added');
+  setStatus('listening', '✓ ' + it.name + ' added. Next medicine bolo...');
+}
+
+function showWizardStep(key) {
+  const step = WIZARD_STEPS[key];
   document.getElementById('askQuestion').textContent = step.question;
-  document.getElementById('askHint').textContent = 'e.g. ' + step.hint;
-  document.getElementById('askInput').value = '';
-  document.getElementById('askInput').inputmode = step.type === 'num' ? 'decimal' : 'text';
+  document.getElementById('askHint').textContent     = step.hint;
+  document.getElementById('askInput').value          = '';
+  document.getElementById('askInput').inputmode      = step.inputType === 'num' ? 'decimal' : 'text';
   document.getElementById('askBanner').classList.add('show');
-  // Speak the question — main mic already listening
-  setTimeout(() => speak(step.question), 200);
-  setStatus('listening', '🎙 <span class="transcript-live">' + step.question + '</span>');
+  setTimeout(() => speak(step.question), 300);
+  setStatus('listening', '🎙 ' + step.question);
 }
 
 function startWizardMic() {
-  // Do NOT start a separate mic — main recognition already running.
-  // Voice goes through handleVoiceInput → wizardStep check → submitWizardAnswer.
-  // Just show a mic indicator in the banner.
-  setStatus('listening', '<span class="transcript-live">🎙 Sun raha hoon... boliye</span>');
+  // Main mic already running — just show status
+  const key = wizardQueue[wizardStep];
+  if (key) setStatus('listening', '🎙 ' + WIZARD_STEPS[key].question);
 }
-
-function stopWizardMic() {
-  // Nothing to stop — main mic handles everything
-}
+function stopWizardMic() {}  // main mic handles all
 
 function submitWizardAnswer(raw) {
-  if (wizardStep < 0) return;
-  const step = STEPS[wizardStep];
-  raw = (raw || document.getElementById('askInput').value).trim();
+  if (wizardStep < 0 || wizardStep >= wizardQueue.length) return;
+  const key  = wizardQueue[wizardStep];
+  const step = WIZARD_STEPS[key];
+  raw = (raw || document.getElementById('askInput').value || '').trim().toLowerCase();
   if (!raw) return;
 
-  if (step.type === 'num') {
+  if (key === 'med_type') {
+    // Detect type from spoken word
+    if (/syrup|liquid|bottle|botol|sharbat/i.test(raw))       wizardItem._type = 'syrup';
+    else if (/tablet|tab|loose|khuli/i.test(raw))              wizardItem._type = 'tablet';
+    else                                                        wizardItem._type = 'strip';  // default
+    // Rebuild tabs_per_strip requirement
+    if (wizardItem._type !== 'strip') {
+      // remove tabs_per_strip from queue
+      wizardQueue = wizardQueue.filter(k => k !== 'tabs_per_strip');
+    }
+    wizardStep++;
+    runNextWizardStep();
+    return;
+  }
+
+  if (step.inputType === 'num') {
     const num = parseFloat(raw.replace(/[^0-9.]/g, ''));
     if (isNaN(num) || num < 0) {
       speak('Sirf number bolo');
-      setStatus('listening', '⚠ Sirf number bolo, e.g. 2');
-      startWizardMic();
+      setTimeout(() => speak(WIZARD_STEPS[key].question), 1200);
       return;
     }
-    wizardItem[step.field] = num;
+    wizardItem[key === 'qty' ? 'qty' : key === 'price' ? 'price' : key] = num;
   } else {
-    // text — medicine name
-    const name = toTitleCase(raw.replace(/\b(ka naam|naam|name)\b/gi, '').trim());
-    if (!name) { speak('Naam dobara bolo'); startWizardMic(); return; }
-    wizardItem[step.field] = name;
+    // name
+    const name = toTitleCase(raw.replace(/\b(ka naam|naam|name|medicine|dawa)\b/gi,'').trim());
+    if (!name) { speak('Naam dobara bolo'); return; }
+    wizardItem.name = name;
   }
 
   document.getElementById('askInput').value = '';
-  nextWizardStep();
+  wizardStep++;
+  runNextWizardStep();
 }
 
-// Old API kept for compatibility
-function askFor(question, field) {
-  // Convert to wizard
-  if (wizardStep < 0) startWizard(pendingItem || {});
-}
+// Compatibility stubs
+function askFor(q, f)    { startWizard(pendingItem || {}); }
 function hideBanner() {
-  stopWizardMic();
   document.getElementById('askBanner').classList.remove('show');
   pendingField = null;
-  wizardStep = -1;
+  wizardStep   = -1;
+  wizardQueue  = [];
 }
 function submitAskInput() {
-  const val = document.getElementById('askInput').value.trim();
-  if (val) submitWizardAnswer(val);
+  const v = document.getElementById('askInput').value.trim();
+  if (v) submitWizardAnswer(v);
 }
-function fillPendingField(text) {
-  submitWizardAnswer(text);
-}
-function askFollowUp(parsed) {
-  startWizard(parsed || {});
-}
+function fillPendingField(text) { submitWizardAnswer(text); }
+function askFollowUp(p)         { startWizard(p || {}); }
 
-// ── ENTRY POINTS ──
 function handleParsed(parsed) {
-  // Check what's missing and start wizard for those fields
-  const missing = [];
-  if (!parsed.name) missing.push('name');
-  if (parsed.strip_qty == null) missing.push('strip_qty');
-  if (!parsed.strip_price) missing.push('strip_price');
-  if (parsed.tablet_qty > 0 && !parsed.tabs_per_strip) missing.push('tabs_per_strip');
-
-  if (missing.length === 0) {
+  // Map old format to new
+  const missing = !parsed.name || !parsed.strip_price;
+  if (!missing) {
+    // Direct add
     pushItem(parsed);
-    speak(parsed.name + ' add ho gaya');
-    setStatus('listening', '✓ ' + parsed.name + ' added. Next medicine bolo...');
+    speak(parsed.name + ' added');
+    setStatus('listening', '✓ ' + parsed.name + ' added. Next bolo...');
   } else {
-    startWizard(parsed);
+    // Map to wizard item
+    const wi = { name: parsed.name||'', _type: 'strip',
+      qty: parsed.strip_qty||null, price: parsed.strip_price||null,
+      tabs_per_strip: parsed.tabs_per_strip||null };
+    startWizard(wi);
   }
 }
-
 async function aiParse(text) {
-  // No AI — just start wizard with whatever name we can guess
   const words = text.trim().split(/\s+/);
-  const guessedName = words.length >= 1 ? cleanName(words.slice(0, Math.min(3, words.length)).join(' ')) : '';
-  startWizard(guessedName ? { name: guessedName } : {});
+  const guess = words.length ? cleanName(words.slice(0, Math.min(3, words.length)).join(' ')) : '';
+  startWizard(guess ? { name: guess } : {});
 }
 
 // ═══════════════════════════════════════════════════
@@ -1131,11 +1167,39 @@ async function saveToSheets(billNo, date, time, subTotal, rounded, roff, patient
 // ═══════════════════════════════════════════════════
 //  TTS
 // ═══════════════════════════════════════════════════
+// ── TTS ──
+let _bestVoice = null;
+function getBestVoice() {
+  if (_bestVoice) return _bestVoice;
+  const voices = window.speechSynthesis.getVoices();
+  // Priority: en-IN female > en-IN > en-GB > en-US
+  const preferred = [
+    v => v.lang === 'en-IN' && v.name.toLowerCase().includes('female'),
+    v => v.lang === 'en-IN',
+    v => v.lang.startsWith('en-IN'),
+    v => v.lang === 'en-GB',
+    v => v.lang.startsWith('en'),
+  ];
+  for (const fn of preferred) {
+    const found = voices.find(fn);
+    if (found) { _bestVoice = found; return found; }
+  }
+  return null;
+}
+// Pre-load voices
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => { _bestVoice = null; getBestVoice(); };
+}
 function speak(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);
-  u.lang='hi-IN'; u.rate=1.1; u.volume=0.7;
+  const u = new SpeechSynthesisUtterance(text);
+  const v = getBestVoice();
+  if (v) u.voice = v;
+  u.lang = 'en-IN';
+  u.rate = 0.9;   // slower — clearer
+  u.pitch = 1.0;
+  u.volume = 1.0;
   window.speechSynthesis.speak(u);
 }
 
