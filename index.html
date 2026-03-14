@@ -389,7 +389,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <!-- ══════════════════════════════════════════════
      CONFIG — edit these values
 ══════════════════════════════════════════════ -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 const CONFIG = {
   GEMINI_API_KEY:          "AIzaSyCcFX7Qs0Zc61foXlDLNngks3IwxZE3QiE",
   GOOGLE_SHEET_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyCa_siNUXJbP6hCcoUcxUOj8cq54OjFl2GrOeZG2G3gMRMOphiyqe2BxLTiIbTE7uB/exec",
@@ -1000,7 +1000,7 @@ function buildEscPos() {
   });
   T('--------------------------------\n');
   T(`Sub Total      Rs.${subTotal.toFixed(2)}\n`);
-  if(discAmt>0) T(`Discount${discType==='pct'?` (${discPct.toFixed(1)}%)`:''}  -Rs.${discAmt.toFixed(2)}\n`);
+  if(discAmt>0) T('Discount' + (discType==='pct' ? ' ('+discPct.toFixed(1)+'%)' : '') + '  -Rs.'+discAmt.toFixed(2)+'\n');
   if(Math.abs(roff)>0.001) T(`Round Off      ${roff>=0?'+':''}Rs.${roff.toFixed(2)}\n`);
   T('================================\n');
   A(BON);T(`TOTAL          Rs.${rounded}\n`);A(BOFF);
