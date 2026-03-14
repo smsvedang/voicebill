@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3</title>
+<title>Sahyog Medical – Voice Billing v3.1</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -670,14 +670,19 @@ function cleanName(n) {
 async function aiParse(text) {
   setStatus('thinking', 'AI parse karta hai...');
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${CONFIG.GEMINI_API_KEY}`,{
-      method:'POST', headers:{'Content-Type':'application/json'},
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': CONFIG.GEMINI_API_KEY
+      },
       body: JSON.stringify({contents:[{parts:[{text:`Extract medicine billing from Hindi/Hinglish: "${text}"\nReturn ONLY JSON (no markdown):\n{"name":"","strip_qty":0,"tablet_qty":0,"tabs_per_strip":null,"strip_price":0}`}]}]})
     });
     const data = await res.json();
+    if (!res.ok) { setStatus('error', 'AI error: ' + (data.error?.message||res.status)); return; }
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
-    if (parsed?.name && parsed?.strip_price) { handleParsed(parsed); setStatus('listening', `AI: ${parsed.name} parsed!`); }
+    if (parsed?.name && parsed?.strip_price) { handleParsed(parsed); setStatus('listening', 'AI: '+parsed.name+' parsed!'); }
     else askFollowUp(parsed || {});
   } catch(e) { setStatus('error', 'AI parse failed. Manual entry use karo.'); }
 }
