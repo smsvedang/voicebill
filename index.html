@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3.1</title>
+<title>Sahyog Medical – Voice Billing v3</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -480,9 +480,90 @@ const VOICE_CORRECTIONS = {
   "glycomet":"Glycomet","gluco met":"Glycomet",
   "glipizide":"Glipizide","glimpiride":"Glimepiride","glimepiride":"Glimepiride",
 
-  // Atorvastatin / Cholesterol
+  // ── Atorvastatin / Cholesterol ──
   "atorvastatin":"Atorvastatin","atorva":"Atorvastatin","ato":"Atorvastatin",
-  "lipitor":"Atorvastatin","storvas":"Storvas",
+  "etawah":"Atorvastatin","atawa":"Atorvastatin","at all":"Atorvastatin",
+  "a torva":"Atorvastatin","torva":"Atorvastatin","atarva":"Atorvastatin",
+  "lipitor":"Atorvastatin","storvas":"Storvas","rosuvas":"Rosuvas",
+  "rosuvastatin":"Rosuvastatin","rosuva":"Rosuvastatin",
+
+  // ── ASP / Aspirin mishearings ──
+  "asp 75":"Aspirin 75","asp75":"Aspirin 75","asp":"Aspirin",
+  "ecosprin":"Ecosprin","eco sprint":"Ecosprin","echo sprint":"Ecosprin",
+  "ecosp":"Ecosprin","ecospleen":"Ecosprin",
+
+  // ── Dolo mishearings ──
+  "polo":"Dolo","pollo":"Dolo","dollo":"Dolo","dolly":"Dolo","dollar":"Dolo",
+  "dole":"Dolo","dolo six fifty":"Dolo 650","polo 650":"Dolo 650",
+  "dollar 650":"Dolo 650","polo six fifty":"Dolo 650",
+
+  // ── Crocin mishearings ──
+  "crow scene":"Crocin","crow sin":"Crocin","causing":"Crocin",
+  "pro scene":"Crocin","crossing":"Crocin","krosin":"Crocin",
+
+  // ── Azithromycin mishearings ──
+  "as a throw me sin":"Azithromycin","as he threw me sin":"Azithromycin",
+  "azithro mycin":"Azithromycin","a theorem a sin":"Azithromycin",
+  "azithro":"Azithromycin","as if ro":"Azithromycin",
+
+  // ── Amoxicillin mishearings ──
+  "a moxy":"Amoxicillin","a mock sea":"Amoxicillin","emotion":"Amoxicillin",
+  "a mosque":"Amoxicillin","ammox":"Amoxicillin",
+
+  // ── Pantoprazole mishearings ──
+  "panto prose all":"Pantoprazole","panto":"Pantoprazole",
+  "pants a prose all":"Pantoprazole","pan d":"Pan-D",
+  "panto 40":"Pantoprazole 40","pan 40":"Pantoprazole 40",
+
+  // ── Cetirizine mishearings ──
+  "set arising":"Cetirizine","situating":"Cetirizine","setting":"Cetirizine",
+  "sitter":"Cetirizine","set rising":"Cetirizine","set reason":"Cetirizine",
+  "city rising":"Cetirizine","citizenry":"Cetirizine",
+
+  // ── Metformin mishearings ──
+  "met phone":"Metformin","met foreign":"Metformin","net form in":"Metformin",
+  "met form":"Metformin",
+
+  // ── Amlodipine mishearings ──
+  "am loading":"Amlodipine","amlo d":"Amlodipine 5",
+  "am lo":"Amlodipine","emlo":"Amlodipine",
+
+  // ── Combiflam mishearings ──
+  "come be flame":"Combiflam","can be flame":"Combiflam",
+  "combined flame":"Combiflam","combo flame":"Combiflam",
+
+  // ── Levofloxacin mishearings ──
+  "level flocks a sin":"Levofloxacin","level":null,"levoflo":"Levofloxacin",
+  "leave of luck":"Levofloxacin","levo flocks":"Levofloxacin",
+
+  // ── Omeprazole mishearings ──
+  "oh my prose all":"Omeprazole","omi prose":"Omeprazole",
+  "home a prose all":"Omeprazole",
+
+  // ── Benadryl mishearings ──
+  "been a drill":"Benadryl","benny drill":"Benadryl","venetian":"Benadryl",
+
+  // ── Becosules mishearings ──
+  "be co souls":"Becosules","because souls":"Becosules","be coals":"Becosules",
+  "become souls":"Becosules",
+
+  // ── Montelukast mishearings ──
+  "monday cast":"Montelukast","monthly cast":"Montelukast",
+  "montelucas":"Montelukast","monthly cost":"Montelukast",
+
+  // ── Ranitidine mishearings ──
+  "run a team":"Ranitidine","run at a dean":"Ranitidine",
+  "rani":"Ranitidine",
+
+  // ── Telmisartan mishearings ──
+  "tell me start":"Telmisartan","tell me certain":"Telmisartan",
+  "tell me satin":"Telmisartan",
+
+  // ── Glycomet mishearings ──
+  "glyco met":"Glycomet","glyco":"Glycomet","gluco":"Glucomet",
+
+  // ── Vitamin mishearings ──
+  "vitamin sea":"Vitamin C","vitamin bee":"Vitamin B","vitamin dee":"Vitamin D",
 
   // Antibiotics
   "levofloxacin":"Levofloxacin","levoflox":"Levofloxacin","levo":"Levofloxacin",
@@ -522,24 +603,30 @@ const VOICE_CORRECTIONS = {
 function applyCorrections(text) {
   let r = text.toLowerCase().trim();
 
-  // 1. Spoken digits — replace digit words with numerals
+  // 1. Spoken digit words → numerals
   const numMap = {
     'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5',
     'six':'6','seven':'7','eight':'8','nine':'9','ten':'10',
     'eleven':'11','twelve':'12','thirteen':'13','fourteen':'14','fifteen':'15',
     'sixteen':'16','seventeen':'17','eighteen':'18','nineteen':'19','twenty':'20',
+    'thirty':'30','forty':'40','fifty':'50','sixty':'60','seventy':'70',
+    'eighty':'80','ninety':'90','hundred':'100',
   };
   Object.entries(numMap).forEach(([w,n]) =>
     r = r.replace(new RegExp('\\b' + w + '\\b', 'gi'), n)
   );
 
-  // 2. Multi-word corrections first (longest match wins)
-  const sorted = Object.entries(VOICE_CORRECTIONS).sort((a,b) => b[0].length - a[0].length);
+  // 2. Multi-word corrections — longest match first
+  const sorted = Object.entries(VOICE_CORRECTIONS)
+    .filter(([k,v]) => v !== null && v !== undefined)
+    .sort((a,b) => b[0].length - a[0].length);
   for (const [wrong, right] of sorted) {
-    r = r.replace(new RegExp('\\b' + wrong.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b', 'gi'), right);
+    if (!wrong) continue;
+    const escaped = wrong.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    r = r.replace(new RegExp('\\b' + escaped + '\\b', 'gi'), right || '');
   }
 
-  // 3. Clean up extra spaces
+  // 3. Clean trailing/double spaces
   r = r.replace(/\s+/g, ' ').trim();
   return r;
 }
