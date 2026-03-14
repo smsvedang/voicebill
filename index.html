@@ -1015,7 +1015,7 @@ function buildEscPos() {
 //  GOOGLE SHEETS
 // ═══════════════════════════════════════════════════
 async function saveToSheets(billNo, date, time, subTotal, rounded, roff, patient, doctor, mobile, address, discPct, discAmt) {
-  const url = https://script.google.com/macros/s/AKfycbyCa_siNUXJbP6hCcoUcxUOj8cq54OjFl2GrOeZG2G3gMRMOphiyqe2BxLTiIbTE7uB/exec;
+  const url = CONFIG.GOOGLE_SHEET_SCRIPT_URL;
   if (!url||url.startsWith('YOUR_')) { document.getElementById('sheetsStatus').textContent='⚠ GOOGLE_SHEET_SCRIPT_URL not configured'; return; }
   document.getElementById('sheetsStatus').textContent='Syncing...';
   document.getElementById('sheetsStatus').className='sheets-status';
