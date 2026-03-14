@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3</title>
+<title>Sahyog Medical – Voice Billing v3.1</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -539,8 +539,11 @@ const VOICE_CORRECTIONS = {
   "met form":"Metformin",
 
   // ── Amlodipine mishearings ──
-  "am loading":"Amlodipine","amlo d":"Amlodipine 5",
-  "am lo":"Amlodipine","emlo":"Amlodipine",
+  // ── Amlodipine / Amlovas mishearings ──
+  "amlodipine":"Amlodipine","amlo":"Amlovas","amlovas":"Amlovas",
+  "ahmedabad":"Amlovas","am loved":"Amlovas","am low":"Amlovas",
+  "am lo vas":"Amlovas","emlova":"Amlovas","amlo vas":"Amlovas",
+  "am loading":"Amlovas","amlo d":"Amlodipine 5",
 
   // ── Combiflam mishearings ──
   "come be flame":"Combiflam","can be flame":"Combiflam",
@@ -594,7 +597,6 @@ const VOICE_CORRECTIONS = {
   "becosules":"Becosules","beco suels":"Becosules","beco souls":"Becosules",
 
   // BP / Heart
-  "amlodipine":"Amlodipine","amlo":"Amlodipine","amlovas":"Amlovas",
   "telmisartan":"Telmisartan","telma":"Telma","telmikind":"Telmikind",
   "aspirin":"Aspirin","ecosprin":"Ecosprin","eco sprint":"Ecosprin",
   "clopidogrel":"Clopidogrel","clopilet":"Clopilet",
@@ -708,30 +710,39 @@ function parseCSV(csv) {
 function fuzzySearch(query, limit = 4) {
   if (!query || medicineDB.length === 0) return [];
   const q = query.toLowerCase().trim();
-  const words = q.split(/\s+/);
+  const words = q.split(/\s+/).filter(w => w.length > 1);
+  if (!q) return [];
 
   const scored = medicineDB.map(med => {
     const n = med.name.toLowerCase();
     let score = 0;
-    // Exact start match — highest priority
-    if (n.startsWith(q))           score += 100;
-    // All words match somewhere
-    if (words.every(w => n.includes(w))) score += 60;
-    // Any word match
-    words.forEach(w => { if (n.includes(w)) score += 20; });
-    // First word match at start
-    if (n.startsWith(words[0]))    score += 30;
-    // Contains query as substring
-    if (n.includes(q))             score += 40;
-    // Levenshtein-ish: character overlap
+
+    if (n === q)                        score += 200; // exact
+    if (n.startsWith(q))               score += 120; // starts with full query
+    if (n.includes(q))                 score += 80;  // contains full query
+    if (words.every(w => n.includes(w))) score += 60; // all words present
+    words.forEach(w => {
+      if (n.startsWith(w))             score += 40;
+      else if (n.includes(w))          score += 20;
+    });
+    // Partial first-word match (handles "amlo" matching "amlovas")
+    const nWords = n.split(/\s+/);
+    words.forEach(qw => {
+      nWords.forEach(nw => {
+        if (nw.startsWith(qw) || qw.startsWith(nw)) score += 35;
+      });
+    });
+    // Character overlap bonus
     let overlap = 0;
     for (const ch of q) { if (n.includes(ch)) overlap++; }
-    score += overlap;
+    score += Math.floor(overlap * 0.5);
+
     return { med, score };
-  }).filter(x => x.score > 10)
-    .sort((a,b) => b.score - a.score)
-    .slice(0, limit)
-    .map(x => x.med);
+  })
+  .filter(x => x.score > 15)
+  .sort((a, b) => b.score - a.score)
+  .slice(0, limit)
+  .map(x => x.med);
 
   return scored;
 }
@@ -993,20 +1004,32 @@ function handleVoiceInput(raw) {
 
   // Try DB fuzzy search
   if (medicineDB.length > 0) {
-    // Extract just the medicine name part (before any numbers)
-    const nameQuery = text.replace(/\d+.*$/, '').trim() || text;
-    const matches = fuzzySearch(nameQuery, 4);
+    // Strip numbers — search only on name portion
+    const nameQuery     = text.replace(/\d+.*$/, '').trim() || text;
+    const rawNameQuery  = applyCorrections(raw.trim()).replace(/\d+.*$/, '').trim() || raw.trim();
+
+    // Try corrected text first, then raw, then each word individually
+    let matches = fuzzySearch(nameQuery, 4);
+    if (matches.length === 0) matches = fuzzySearch(rawNameQuery, 4);
+    if (matches.length === 0) {
+      // Try each word separately, take best result
+      const words = nameQuery.split(/\s+/).filter(w => w.length > 2);
+      for (const w of words) {
+        const wm = fuzzySearch(w, 4);
+        if (wm.length > 0) { matches = wm; break; }
+      }
+    }
+
     if (matches.length === 1) {
-      // Only one match — select directly
       matchCandidates = matches;
       selectMatch(0);
       return;
     } else if (matches.length > 1) {
       showMatchPanel(nameQuery, matches); return;
     }
-    // No match in DB — try wizard anyway
-    speak('Medicine nahi mili. Naam clearly bolo.');
-    setStatus('listening', '⚠ DB mein nahi mila: "' + nameQuery + '"');
+    // Still nothing
+    speak('Nahi mila. Dobara bolo ya alag naam try karo.');
+    setStatus('error', '⚠ "' + nameQuery + '" — DB mein nahi mila. Dobara bolo.');
     return;
   }
 
