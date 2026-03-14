@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3.1</title>
+<title>Sahyog Medical – Voice Billing v3</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -391,7 +391,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 ══════════════════════════════════════════════ -->
 <script>
 const CONFIG = {
-  GEMINI_API_KEY:          "AIzaSyCgnywK0px-IiVYmkMI7Q6teJiY5T84MYY",
+  GEMINI_API_KEY:          "AIzaSyCcFX7Qs0Zc61foXlDLNngks3IwxZE3QiE",
   GOOGLE_SHEET_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyCa_siNUXJbP6hCcoUcxUOj8cq54OjFl2GrOeZG2G3gMRMOphiyqe2BxLTiIbTE7uB/exec",
   BILL_PREFIX:             "SAHYOG",
 
@@ -612,14 +612,12 @@ function handleVoiceInput(raw) {
   // ── PENDING FOLLOW-UP ──
   if (pendingItem !== null && pendingField !== null) { fillPendingField(text); return; }
 
-  // ── PARSE: 1.Regex → 2.AI ──
+  // ── PARSE: 1.Regex → 2.Follow-up questions ──
   const parsed = parseVoiceText(text);
   if (parsed) {
     handleParsed(parsed);
-  } else if (CONFIG.GEMINI_API_KEY && !CONFIG.GEMINI_API_KEY.startsWith('YOUR_')) {
-    aiParse(text);
   } else {
-    setStatus('error', `Parse failed: "${text}". Try: "Dolo 650 2 strip 34 rupees"`);
+    aiParse(text);
   }
 }
 
@@ -665,26 +663,20 @@ function cleanName(n) {
 }
 
 // ═══════════════════════════════════════════════════
-//  AI FALLBACK (Gemini)
+//  AI FALLBACK — DISABLED (regex handles all cases)
+//  Agar enable karna ho: aistudio.google.com se
+//  naya key lo aur CONFIG.GEMINI_API_KEY set karo
 // ═══════════════════════════════════════════════════
 async function aiParse(text) {
-  setStatus('thinking', 'AI parse karta hai...');
-  try {
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': CONFIG.GEMINI_API_KEY
-      },
-      body: JSON.stringify({contents:[{parts:[{text:`Extract medicine billing from Hindi/Hinglish: "${text}"\nReturn ONLY JSON (no markdown):\n{"name":"","strip_qty":0,"tablet_qty":0,"tabs_per_strip":null,"strip_price":0}`}]}]})
-    });
-    const data = await res.json();
-    if (!res.ok) { setStatus('error', 'AI error: ' + (data.error?.message||res.status)); return; }
-    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
-    if (parsed?.name && parsed?.strip_price) { handleParsed(parsed); setStatus('listening', 'AI: '+parsed.name+' parsed!'); }
-    else askFollowUp(parsed || {});
-  } catch(e) { setStatus('error', 'AI parse failed. Manual entry use karo.'); }
+  // AI disabled — ask follow-up questions instead
+  setStatus('listening', 'Samajh nahi aaya. Medicine ka naam aur price clearly bolo.');
+  speak('Medicine ka naam aur price clearly bolo');
+  // Try to extract at least the medicine name from whatever was said
+  const words = text.trim().split(/\s+/);
+  if (words.length >= 1) {
+    pendingItem = { name: cleanName(words.slice(0, words.length > 2 ? 2 : words.length).join(' ')) };
+    askFor('MRP kya hai (Rs. per strip)?', 'strip_price');
+  }
 }
 
 // ═══════════════════════════════════════════════════
