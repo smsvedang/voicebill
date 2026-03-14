@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3</title>
+<title>Sahyog Medical – Voice Billing v3.1</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -239,10 +239,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="ask-icon">🎙️</div>
   <div class="ask-body">
     <div class="ask-q" id="askQuestion">—</div>
-    <div class="ask-sub">Bolo mic mein — ya neeche type karo</div>
+    <div class="ask-sub" id="askHint" style="color:var(--amber);font-size:11px;margin-top:2px"></div>
+    <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">Mic se bolo — ya neeche type karo</div>
     <div class="ask-input-row">
-      <input class="ask-txt" id="askInput" placeholder="Type here..." onkeydown="if(event.key==='Enter') submitAskInput()">
-      <button class="ask-ok" onclick="submitAskInput()">OK</button>
+      <input class="ask-txt" id="askInput" placeholder="Type karo..." 
+        inputmode="decimal"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        onkeydown="if(event.key==='Enter') submitAskInput()">
+      <button class="ask-ok" onclick="submitAskInput()">OK ✓</button>
     </div>
   </div>
 </div>
@@ -609,10 +613,12 @@ function handleVoiceInput(raw) {
     return;
   }
 
-  // ── PENDING FOLLOW-UP ──
-  if (pendingItem !== null && pendingField !== null) { fillPendingField(text); return; }
+  // ── WIZARD ACTIVE — route all voice to current step ──
+  if (wizardStep >= 0) {
+    submitWizardAnswer(text); return;
+  }
 
-  // ── PARSE: 1.Regex → 2.Follow-up questions ──
+  // ── PARSE: 1.Regex → 2.Wizard ──
   const parsed = parseVoiceText(text);
   if (parsed) {
     handleParsed(parsed);
@@ -663,66 +669,162 @@ function cleanName(n) {
 }
 
 // ═══════════════════════════════════════════════════
-//  AI FALLBACK — DISABLED (regex handles all cases)
-//  Agar enable karna ho: aistudio.google.com se
-//  naya key lo aur CONFIG.GEMINI_API_KEY set karo
+//  STEP-BY-STEP MIC WIZARD
+//  Har field ek alag step mein — mic se sunta hai
 // ═══════════════════════════════════════════════════
-async function aiParse(text) {
-  // AI disabled — ask follow-up questions instead
-  setStatus('listening', 'Samajh nahi aaya. Medicine ka naam aur price clearly bolo.');
-  speak('Medicine ka naam aur price clearly bolo');
-  // Try to extract at least the medicine name from whatever was said
-  const words = text.trim().split(/\s+/);
-  if (words.length >= 1) {
-    pendingItem = { name: cleanName(words.slice(0, words.length > 2 ? 2 : words.length).join(' ')) };
-    askFor('MRP kya hai (Rs. per strip)?', 'strip_price');
-  }
+
+// Steps order: name → strip_qty → strip_price → (tabs_per_strip if tablet_qty > 0)
+const STEPS = [
+  { field: 'name',          question: 'Medicine ka naam bolo',         hint: 'e.g. Dolo 650',        type: 'text' },
+  { field: 'strip_qty',     question: 'Kitni strip hai?',              hint: 'e.g. 2',               type: 'num'  },
+  { field: 'strip_price',   question: 'Ek strip ka MRP kya hai?',      hint: 'e.g. 34',              type: 'num'  },
+  { field: 'tabs_per_strip',question: 'Ek strip mein kitne tablet?',   hint: 'e.g. 10  (0 = skip)',  type: 'num'  },
+];
+
+let wizardStep = -1;   // current step index, -1 = not active
+let wizardItem = {};   // item being built
+let wizardMicRec = null;
+
+function startWizard(partialItem) {
+  wizardItem = partialItem || {};
+  wizardStep = -1;
+  nextWizardStep();
 }
 
-// ═══════════════════════════════════════════════════
-//  FOLLOW-UP Q&A
-// ═══════════════════════════════════════════════════
-function handleParsed(parsed) {
-  if (!parsed.name)       { pendingItem=parsed; askFor('Medicine ka naam?','name'); return; }
-  if (!parsed.strip_price){ pendingItem=parsed; askFor('MRP kya hai (₹ per strip)?','strip_price'); return; }
-  if (parsed.tablet_qty>0 && !parsed.tabs_per_strip){ pendingItem=parsed; askFor('Ek strip mein kitne tablet?','tabs_per_strip'); return; }
-  pushItem(parsed);
-  speak(`${parsed.name} add ho gaya`);
-  setStatus('listening', `✓ ${parsed.name} — ₹${calcItem(parsed).total.toFixed(2)}. Next medicine bolo...`);
+function nextWizardStep() {
+  // Find next unfilled required step
+  for (let i = 0; i < STEPS.length; i++) {
+    const s = STEPS[i];
+    // Skip tabs_per_strip if no tablet_qty
+    if (s.field === 'tabs_per_strip' && !(wizardItem.tablet_qty > 0)) continue;
+    // Skip if already filled
+    if (s.field === 'name' && wizardItem.name) continue;
+    if (s.field === 'strip_qty' && wizardItem.strip_qty != null && wizardItem.strip_qty >= 0) continue;
+    if (s.field === 'strip_price' && wizardItem.strip_price) continue;
+    if (s.field === 'tabs_per_strip' && wizardItem.tabs_per_strip) continue;
+    // This step needs filling
+    wizardStep = i;
+    showWizardStep(s);
+    return;
+  }
+  // All filled — add item
+  wizardStep = -1;
+  hideBanner();
+  const copy = {...wizardItem};
+  wizardItem = {};
+  // Default strip_qty to 1 if somehow still missing
+  if (!copy.strip_qty) copy.strip_qty = 1;
+  pushItem(copy);
+  speak(copy.name + ' add ho gaya');
+  setStatus('listening', '✓ ' + copy.name + ' added. Next medicine bolo...');
 }
-function askFor(question, field) {
-  pendingField = field;
-  document.getElementById('askQuestion').textContent = question;
+
+function showWizardStep(step) {
+  document.getElementById('askQuestion').textContent = step.question;
+  document.getElementById('askHint').textContent = step.hint;
   document.getElementById('askInput').value = '';
+  document.getElementById('askInput').inputmode = step.type === 'num' ? 'decimal' : 'text';
   document.getElementById('askBanner').classList.add('show');
-  setTimeout(() => document.getElementById('askInput').focus(), 100);
-  speak(question);
+  speak(step.question);
+  // Start mic listening for this step
+  startWizardMic();
+}
+
+function startWizardMic() {
+  stopWizardMic();
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  wizardMicRec = new SR();
+  wizardMicRec.lang = 'hi-IN';
+  wizardMicRec.continuous = false;
+  wizardMicRec.interimResults = false;
+  wizardMicRec.onresult = (e) => {
+    const raw = e.results[0][0].transcript.trim();
+    // Convert spoken numbers to digits
+    const corrected = applyCorrections(raw.toLowerCase());
+    document.getElementById('askInput').value = corrected;
+    submitWizardAnswer(corrected);
+  };
+  wizardMicRec.onerror = () => {}; // silent fail, user can type
+  wizardMicRec.onend = () => {};
+  wizardMicRec.start();
+}
+
+function stopWizardMic() {
+  if (wizardMicRec) { try { wizardMicRec.stop(); } catch(e){} wizardMicRec = null; }
+}
+
+function submitWizardAnswer(raw) {
+  if (wizardStep < 0) return;
+  const step = STEPS[wizardStep];
+  raw = (raw || document.getElementById('askInput').value).trim();
+  if (!raw) return;
+
+  if (step.type === 'num') {
+    const num = parseFloat(raw.replace(/[^0-9.]/g, ''));
+    if (isNaN(num) || num < 0) {
+      speak('Sirf number bolo');
+      setStatus('listening', '⚠ Sirf number bolo, e.g. 2');
+      startWizardMic();
+      return;
+    }
+    wizardItem[step.field] = num;
+  } else {
+    // text — medicine name
+    const name = toTitleCase(raw.replace(/\b(ka naam|naam|name)\b/gi, '').trim());
+    if (!name) { speak('Naam dobara bolo'); startWizardMic(); return; }
+    wizardItem[step.field] = name;
+  }
+
+  document.getElementById('askInput').value = '';
+  nextWizardStep();
+}
+
+// Old API kept for compatibility
+function askFor(question, field) {
+  // Convert to wizard
+  if (wizardStep < 0) startWizard(pendingItem || {});
 }
 function hideBanner() {
+  stopWizardMic();
   document.getElementById('askBanner').classList.remove('show');
   pendingField = null;
+  wizardStep = -1;
 }
 function submitAskInput() {
   const val = document.getElementById('askInput').value.trim();
-  if (val) fillPendingField(val);
+  if (val) submitWizardAnswer(val);
 }
 function fillPendingField(text) {
-  const num = parseFloat(text.replace(/[^0-9.]/g,''));
-  if (pendingField==='name')          pendingItem.name = toTitleCase(text.trim());
-  else if (pendingField==='strip_qty')    pendingItem.strip_qty = num||0;
-  else if (pendingField==='tablet_qty')   pendingItem.tablet_qty = num||0;
-  else if (pendingField==='tabs_per_strip') pendingItem.tabs_per_strip = num||null;
-  else if (pendingField==='strip_price')  pendingItem.strip_price = num||0;
-  hideBanner();
-  const copy = {...pendingItem}; pendingItem = null;
-  handleParsed(copy);
+  submitWizardAnswer(text);
 }
 function askFollowUp(parsed) {
-  pendingItem = parsed;
-  if (!parsed.name)         { askFor('Medicine ka naam?','name'); return; }
-  if (!parsed.strip_price)  { askFor('MRP kya hai?','strip_price'); return; }
-  if (parsed.tablet_qty>0 && !parsed.tabs_per_strip) { askFor('Ek strip mein kitne tablet?','tabs_per_strip'); return; }
-  pushItem(parsed);
+  startWizard(parsed || {});
+}
+
+// ── ENTRY POINTS ──
+function handleParsed(parsed) {
+  // Check what's missing and start wizard for those fields
+  const missing = [];
+  if (!parsed.name) missing.push('name');
+  if (parsed.strip_qty == null) missing.push('strip_qty');
+  if (!parsed.strip_price) missing.push('strip_price');
+  if (parsed.tablet_qty > 0 && !parsed.tabs_per_strip) missing.push('tabs_per_strip');
+
+  if (missing.length === 0) {
+    pushItem(parsed);
+    speak(parsed.name + ' add ho gaya');
+    setStatus('listening', '✓ ' + parsed.name + ' added. Next medicine bolo...');
+  } else {
+    startWizard(parsed);
+  }
+}
+
+async function aiParse(text) {
+  // No AI — just start wizard with whatever name we can guess
+  const words = text.trim().split(/\s+/);
+  const guessedName = words.length >= 1 ? cleanName(words.slice(0, Math.min(3, words.length)).join(' ')) : '';
+  startWizard(guessedName ? { name: guessedName } : {});
 }
 
 // ═══════════════════════════════════════════════════
