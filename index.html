@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3.1</title>
+<title>Sahyog Medical – Voice Billing v3</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -578,47 +578,51 @@ function voiceFieldCapture(fieldKey) {
 function handleVoiceInput(raw) {
   const text = applyCorrections(raw.trim());
   if (!text) return;
-  setStatus('thinking', `Processing: <span class="transcript-live">"${text}"</span>`);
+  setStatus('listening', `<span class="transcript-live">"${text}"</span>`);
 
-  // ── PATIENT/DOCTOR COMMANDS ──
+  // ── SPECIAL COMMANDS — always work, even during wizard ──
+  if (/bill\s*(complete|done|finish|ho\s*gaya|khatam|puri)/i.test(text)) {
+    hideBanner();
+    stopListening(); if (items.length > 0) showReceipt(); return;
+  }
+  if (/clear\s*(bill|sab|all)/i.test(text)) {
+    hideBanner();
+    items = []; renderItems();
+    setStatus('listening', 'Bill cleared.'); speak('Bill clear ho gaya'); return;
+  }
+  if (/last\s*item\s*(remove|delete|hata|nikal)/i.test(text)) {
+    if (items.length) { const r = items.pop(); renderItems(); speak(r.name + ' remove ho gaya'); }
+    if (wizardStep >= 0) startWizardMic(); // resume wizard prompt
+    return;
+  }
+
+  // ── PATIENT / DOCTOR — always work, even during wizard ──
   let m;
   m = text.match(/patient\s+(?:name\s+)?(.+)/i);
   if (m) {
     const name = toTitleCase(m[1].replace(/\b(ka naam|name)\b/gi,'').trim());
     document.getElementById('f_patient').value = name;
     document.getElementById('f_patient').classList.add('filled');
-    setStatus('listening', `✓ Patient: ${name}`);
-    speak(`Patient ${name} set ho gaya`); return;
+    speak('Patient ' + name + ' set ho gaya');
+    if (wizardStep >= 0) startWizardMic(); else setStatus('listening', '✓ Patient: ' + name);
+    return;
   }
   m = text.match(/doctor\s+(?:name\s+)?(?:dr\.?\s+)?(.+)/i);
   if (m) {
     const name = 'Dr. ' + toTitleCase(m[1].replace(/^dr\.?\s+/i,'').trim());
     document.getElementById('f_doctor').value = name;
     document.getElementById('f_doctor').classList.add('filled');
-    setStatus('listening', `✓ Doctor: ${name}`);
-    speak(`Doctor ${name} set ho gaya`); return;
-  }
-
-  // ── SPECIAL COMMANDS ──
-  if (/bill\s*(complete|done|finish|ho\s*gaya|khatam|puri)/i.test(text)) {
-    stopListening(); if (items.length > 0) showReceipt(); return;
-  }
-  if (/clear\s*(bill|sab|all)/i.test(text)) {
-    items = []; renderItems();
-    setStatus('listening', 'Bill cleared.'); speak('Bill clear ho gaya'); return;
-  }
-  if (/last\s*item\s*(remove|delete|hata|nikal)/i.test(text)) {
-    if (items.length) { const r = items.pop(); renderItems(); setStatus('listening', `"${r.name}" removed.`); speak(`${r.name} remove ho gaya`); }
-    else setStatus('listening', 'No items to remove.');
+    speak('Doctor ' + name + ' set ho gaya');
+    if (wizardStep >= 0) startWizardMic(); else setStatus('listening', '✓ Doctor: ' + name);
     return;
   }
 
-  // ── WIZARD ACTIVE — route all voice to current step ──
+  // ── WIZARD ACTIVE — route voice to current step ──
   if (wizardStep >= 0) {
     submitWizardAnswer(text); return;
   }
 
-  // ── PARSE: 1.Regex → 2.Wizard ──
+  // ── PARSE: Regex → Wizard ──
   const parsed = parseVoiceText(text);
   if (parsed) {
     handleParsed(parsed);
@@ -720,38 +724,27 @@ function nextWizardStep() {
 }
 
 function showWizardStep(step) {
+  const stepNum = STEPS.filter((s,i) => i <= wizardStep).length;
+  const totalSteps = STEPS.length;
   document.getElementById('askQuestion').textContent = step.question;
-  document.getElementById('askHint').textContent = step.hint;
+  document.getElementById('askHint').textContent = 'e.g. ' + step.hint;
   document.getElementById('askInput').value = '';
   document.getElementById('askInput').inputmode = step.type === 'num' ? 'decimal' : 'text';
   document.getElementById('askBanner').classList.add('show');
-  speak(step.question);
-  // Start mic listening for this step
-  startWizardMic();
+  // Speak the question — main mic already listening
+  setTimeout(() => speak(step.question), 200);
+  setStatus('listening', '🎙 <span class="transcript-live">' + step.question + '</span>');
 }
 
 function startWizardMic() {
-  stopWizardMic();
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return;
-  wizardMicRec = new SR();
-  wizardMicRec.lang = 'hi-IN';
-  wizardMicRec.continuous = false;
-  wizardMicRec.interimResults = false;
-  wizardMicRec.onresult = (e) => {
-    const raw = e.results[0][0].transcript.trim();
-    // Convert spoken numbers to digits
-    const corrected = applyCorrections(raw.toLowerCase());
-    document.getElementById('askInput').value = corrected;
-    submitWizardAnswer(corrected);
-  };
-  wizardMicRec.onerror = () => {}; // silent fail, user can type
-  wizardMicRec.onend = () => {};
-  wizardMicRec.start();
+  // Do NOT start a separate mic — main recognition already running.
+  // Voice goes through handleVoiceInput → wizardStep check → submitWizardAnswer.
+  // Just show a mic indicator in the banner.
+  setStatus('listening', '<span class="transcript-live">🎙 Sun raha hoon... boliye</span>');
 }
 
 function stopWizardMic() {
-  if (wizardMicRec) { try { wizardMicRec.stop(); } catch(e){} wizardMicRec = null; }
+  // Nothing to stop — main mic handles everything
 }
 
 function submitWizardAnswer(raw) {
