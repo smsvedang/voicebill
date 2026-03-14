@@ -293,19 +293,29 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   </div>
 </div>
 
+<!-- ── MEDICINE DB STATUS ── -->
+<div id="dbStatus" style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:4px;margin-bottom:8px">
+  📋 Medicine DB: <span id="dbStatusText">Not loaded — add MEDICINE_DB_URL in CONFIG</span>
+</div>
+
 <!-- ── VOICE HELP ── -->
 <div class="help-strip">
-  <strong>Medicine Commands:</strong>
-  <span class="cmd">"Dolo 650 2 strip 20 rupees"</span>
-  <span class="cmd">"Crocin 3 tablet 10 tab strip 25"</span>
-  <span class="cmd">"Paracetamol 1 strip 2 tablet 10 tab strip 30"</span><br>
-  <strong>Patient Commands:</strong>
-  <span class="cmd">"patient name Ramesh Kumar"</span>
-  <span class="cmd">"doctor name Dr. Sharma"</span><br>
+  <strong>Medicine bolne ka tarika:</strong>
+  <span class="cmd">"Dolo"</span> → list aayegi → <span class="cmd">"1" / "2" / "3"</span> bolo<br>
+  <strong>Patient / Doctor:</strong>
+  <span class="cmd">"patient Ramesh Kumar"</span>
+  <span class="cmd">"doctor Sharma"</span><br>
   <strong>Controls:</strong>
-  <span class="cmd">"last item remove"</span>
-  <span class="cmd">"clear bill"</span>
+  <span class="cmd">"last hata"</span>
+  <span class="cmd">"clear"</span>
   <span class="cmd">"bill complete"</span>
+</div>
+
+<!-- ── MEDICINE MATCH PANEL ── -->
+<div id="matchPanel" style="display:none;background:var(--surface);border:1px solid rgba(34,197,94,0.4);border-radius:var(--radius);padding:12px;margin-bottom:12px">
+  <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:8px">🔍 <span id="matchQuery"></span> — <strong style="color:var(--accent)">Kaun sa? Number bolo ya naam dobara bolo</strong></div>
+  <div id="matchList" style="display:flex;flex-direction:column;gap:6px"></div>
+  <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:8px">"cancel" bolo ya kuch aur bolne ke liye mic use karo</div>
 </div>
 
 <!-- ── MANUAL ENTRY ── -->
@@ -398,6 +408,10 @@ const CONFIG = {
   GEMINI_API_KEY:          "AIzaSyCcFX7Qs0Zc61foXlDLNngks3IwxZE3QiE",
   GOOGLE_SHEET_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyCa_siNUXJbP6hCcoUcxUOj8cq54OjFl2GrOeZG2G3gMRMOphiyqe2BxLTiIbTE7uB/exec",
   BILL_PREFIX:             "SAHYOG",
+
+  // Medicine list — Google Sheets published as CSV
+  // File → Share → Publish to web → CSV → paste URL here
+  MEDICINE_DB_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOC4o0_IHDqIl8VYD0LG7xKhEKNMMKUO5tUPCCkhHTJhw8HDWJl4Z5k3cwXgHfxBPwXI84kL3eg7TQ/pubhtml?gid=0&single=true",
 
   // Store details (shown on bill)
   STORE_NAME:    "Sahyog Medical Store",
@@ -645,12 +659,131 @@ let fieldMicTarget = null;
 let fieldMicRec = null;
 let btDevice = null;
 
+// Medicine DB
+let medicineDB = [];          // [{name}] — loaded from Google Sheets CSV
+let matchCandidates = [];     // current search results shown to user
+let awaitingMatchSelect = false;
+
+// ═══════════════════════════════════════════════════
+//  MEDICINE DB — load from Google Sheets CSV
+// ═══════════════════════════════════════════════════
+async function loadMedicineDB() {
+  const url = CONFIG.MEDICINE_DB_URL;
+  const el = document.getElementById('dbStatusText');
+  if (!url || url.startsWith('YOUR_')) {
+    el.textContent = 'Not loaded — add MEDICINE_DB_URL in CONFIG';
+    el.style.color = 'var(--amber)';
+    return;
+  }
+  try {
+    el.textContent = 'Loading...';
+    const res = await fetch(url);
+    const csv = await res.text();
+    medicineDB = parseCSV(csv);
+    el.textContent = `✓ ${medicineDB.length} medicines loaded`;
+    el.style.color = 'var(--accent)';
+  } catch(e) {
+    el.textContent = '✕ Load failed — check URL and sharing settings';
+    el.style.color = 'var(--red)';
+  }
+}
+
+function parseCSV(csv) {
+  const lines = csv.trim().split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  // First line = header, find name column (or just use col 0)
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
+  const nameIdx = Math.max(0, headers.findIndex(h =>
+    h.includes('name') || h.includes('medicine') || h.includes('naam')
+  ));
+  return lines.slice(1).map(line => {
+    const cols = line.split(',').map(c => c.trim().replace(/"/g,''));
+    const name = cols[nameIdx] || '';
+    if (!name) return null;
+    return { name };
+  }).filter(Boolean);
+}
+
+// ─── FUZZY SEARCH ───────────────────────────────────
+function fuzzySearch(query, limit = 4) {
+  if (!query || medicineDB.length === 0) return [];
+  const q = query.toLowerCase().trim();
+  const words = q.split(/\s+/);
+
+  const scored = medicineDB.map(med => {
+    const n = med.name.toLowerCase();
+    let score = 0;
+    // Exact start match — highest priority
+    if (n.startsWith(q))           score += 100;
+    // All words match somewhere
+    if (words.every(w => n.includes(w))) score += 60;
+    // Any word match
+    words.forEach(w => { if (n.includes(w)) score += 20; });
+    // First word match at start
+    if (n.startsWith(words[0]))    score += 30;
+    // Contains query as substring
+    if (n.includes(q))             score += 40;
+    // Levenshtein-ish: character overlap
+    let overlap = 0;
+    for (const ch of q) { if (n.includes(ch)) overlap++; }
+    score += overlap;
+    return { med, score };
+  }).filter(x => x.score > 10)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, limit)
+    .map(x => x.med);
+
+  return scored;
+}
+
+// ─── SHOW MATCH PANEL ───────────────────────────────
+function showMatchPanel(query, matches) {
+  matchCandidates = matches;
+  awaitingMatchSelect = true;
+  document.getElementById('matchQuery').textContent = '"' + query + '"';
+  const list = document.getElementById('matchList');
+  list.innerHTML = matches.map((m, i) => `
+    <div onclick="selectMatch(${i})" style="
+      display:flex;align-items:center;gap:10px;
+      background:var(--card);border:1px solid var(--border);
+      border-radius:6px;padding:9px 12px;cursor:pointer;
+      transition:border-color 0.15s;
+    " onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <span style="background:var(--accent);color:#0a0f0a;border-radius:4px;
+        width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+        font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0">${i+1}</span>
+      <span style="font-weight:600;color:var(--text);font-size:13px">${m.name}</span>
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-left:auto">${m.type}</span>
+    </div>
+  `).join('');
+  document.getElementById('matchPanel').style.display = 'block';
+  // Speak options
+  const names = matches.map((m,i) => `${i+1}: ${m.name}`).join(', ');
+  speak(matches.length + ' results. ' + names + '. Kaun sa?');
+  setStatus('listening', '🔍 Kaun sa? <strong>1 se ' + matches.length + '</strong> bolo ya naam dobara bolo');
+}
+
+function hideMatchPanel() {
+  document.getElementById('matchPanel').style.display = 'none';
+  matchCandidates = [];
+  awaitingMatchSelect = false;
+}
+
+function selectMatch(idx) {
+  if (idx < 0 || idx >= matchCandidates.length) return;
+  hideMatchPanel();
+  const med = matchCandidates[idx];
+  speak(med.name + ' selected. Strip hai, Syrup hai, ya Tablet?');
+  startWizard({ name: med.name });
+}
+
 // ═══════════════════════════════════════════════════
 //  STORE DETAILS INIT
 // ═══════════════════════════════════════════════════
 function initApp() {
   const el = document.getElementById('storeAddr');
   if (el) el.textContent = `${CONFIG.STORE_ADDR} — Ph: ${CONFIG.STORE_PHONE}`;
+  loadMedicineDB();
 }
 
 // ═══════════════════════════════════════════════════
@@ -784,55 +917,101 @@ function handleVoiceInput(raw) {
   if (!text) return;
   setStatus('listening', `<span class="transcript-live">"${text}"</span>`);
 
-  // ── SPECIAL COMMANDS — always work, even during wizard ──
+  // ── SPECIAL COMMANDS — always work ──
   if (/bill\s*(complete|done|finish|ho\s*gaya|khatam|puri)/i.test(text)) {
-    hideBanner();
+    hideBanner(); hideMatchPanel();
     stopListening(); if (items.length > 0) showReceipt(); return;
   }
-  if (/clear\s*(bill|sab|all)/i.test(text)) {
-    hideBanner();
-    items = []; renderItems();
-    setStatus('listening', 'Bill cleared.'); speak('Bill clear ho gaya'); return;
+  if (/^(clear|saaf|reset)\b/i.test(text) || /clear\s*(bill|sab|all)/i.test(text)) {
+    hideBanner(); hideMatchPanel();
+    clearBill(); return;
   }
-  if (/last\s*item\s*(remove|delete|hata|nikal)/i.test(text)) {
-    if (items.length) { const r = items.pop(); renderItems(); speak(r.name + ' remove ho gaya'); }
-    if (wizardStep >= 0) startWizardMic(); // resume wizard prompt
+  if (/last\s*(hata|nikal|remove|delete)|pichla\s*(hata|nikal)/i.test(text)) {
+    if (items.length) { const r = items.pop(); renderItems(); speak(r.name + ' removed'); }
     return;
   }
+  if (/^cancel$/i.test(text)) {
+    hideMatchPanel(); hideBanner();
+    speak('Cancelled'); setStatus('listening', 'Cancelled. Aage bolo.'); return;
+  }
 
-  // ── PATIENT / DOCTOR — always work, even during wizard ──
+  // ── PATIENT / DOCTOR ──
   let m;
-  m = text.match(/patient\s+(?:name\s+)?(.+)/i);
+  m = text.match(/^patient\s+(.+)/i);
   if (m) {
     const name = toTitleCase(m[1].replace(/\b(ka naam|name)\b/gi,'').trim());
     document.getElementById('f_patient').value = name;
     document.getElementById('f_patient').classList.add('filled');
-    speak('Patient ' + name + ' set ho gaya');
-    if (wizardStep >= 0) startWizardMic(); else setStatus('listening', '✓ Patient: ' + name);
+    speak('Patient ' + name);
+    if (wizardStep >= 0) startWizardMic();
     return;
   }
-  m = text.match(/doctor\s+(?:name\s+)?(?:dr\.?\s+)?(.+)/i);
+  m = text.match(/^doctor\s+(?:dr\.?\s+)?(.+)/i);
   if (m) {
     const name = 'Dr. ' + toTitleCase(m[1].replace(/^dr\.?\s+/i,'').trim());
     document.getElementById('f_doctor').value = name;
     document.getElementById('f_doctor').classList.add('filled');
-    speak('Doctor ' + name + ' set ho gaya');
-    if (wizardStep >= 0) startWizardMic(); else setStatus('listening', '✓ Doctor: ' + name);
+    speak('Doctor ' + name);
+    if (wizardStep >= 0) startWizardMic();
     return;
   }
 
-  // ── WIZARD ACTIVE — route voice to current step ──
+  // ── MATCH PANEL ACTIVE — user selecting a result ──
+  if (awaitingMatchSelect) {
+    // Number selection: "1", "2", "3", "4"
+    const num = parseInt(text.trim());
+    if (!isNaN(num) && num >= 1 && num <= matchCandidates.length) {
+      selectMatch(num - 1); return;
+    }
+    // "pehla"/"first", "doosra"/"second" etc
+    const ordinals = ['pehla','pehli','first','1st','ek','one',
+                      'doosra','doosri','second','2nd','do','two',
+                      'teesra','teesri','third','3rd','teen','three',
+                      'chautha','fourth','4th','char','four'];
+    const oi = [0,0,0,0,0,0, 1,1,1,1,1,1, 2,2,2,2,2,2, 3,3,3,3];
+    for (let i = 0; i < ordinals.length; i++) {
+      if (text.trim().toLowerCase() === ordinals[i]) {
+        selectMatch(oi[i]); return;
+      }
+    }
+    // User said something else — treat as a new search
+    hideMatchPanel();
+    // Fall through to search below
+  }
+
+  // ── WIZARD ACTIVE ──
   if (wizardStep >= 0) {
     submitWizardAnswer(text); return;
   }
 
-  // ── PARSE: Regex → Wizard ──
+  // ── MEDICINE SEARCH ──
+  // First try regex parse (for "Dolo 2 strip 20" style complete commands)
   const parsed = parseVoiceText(text);
-  if (parsed) {
-    handleParsed(parsed);
-  } else {
-    aiParse(text);
+  if (parsed && parsed.strip_price) {
+    handleParsed(parsed); return;
   }
+
+  // Try DB fuzzy search
+  if (medicineDB.length > 0) {
+    // Extract just the medicine name part (before any numbers)
+    const nameQuery = text.replace(/\d+.*$/, '').trim() || text;
+    const matches = fuzzySearch(nameQuery, 4);
+    if (matches.length === 1) {
+      // Only one match — select directly
+      matchCandidates = matches;
+      selectMatch(0);
+      return;
+    } else if (matches.length > 1) {
+      showMatchPanel(nameQuery, matches); return;
+    }
+    // No match in DB — try wizard anyway
+    speak('Medicine nahi mili. Naam clearly bolo.');
+    setStatus('listening', '⚠ DB mein nahi mila: "' + nameQuery + '"');
+    return;
+  }
+
+  // No DB — fall back to wizard
+  aiParse(text);
 }
 
 // ═══════════════════════════════════════════════════
