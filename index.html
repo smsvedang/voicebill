@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3</title>
+<title>Sahyog Medical – Voice Billing v3.1</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -413,19 +413,136 @@ const CONFIG = {
 //  VOICE CORRECTIONS DICTIONARY
 // ═══════════════════════════════════════════════════
 const VOICE_CORRECTIONS = {
-  "six fifty":"650","five hundred":"500","two fifty":"250","two hundred fifty":"250",
-  "one thousand":"1000","seven fifty":"750","one fifty":"150","seventy five":"75",
-  "pcm":"Paracetamol","p c m":"Paracetamol","azee":"Azithromycin","azimax":"Azithromycin",
-  "amoxy":"Amoxicillin","levoflox":"Levofloxacin","cipro":"Ciprofloxacin",
-  "pantofast":"Pantoprazole","pan 40":"Pantoprazole 40","pan":"Pantoprazole",
-  "rantac":"Ranitidine","omez":"Omeprazole","montek lc":"Montelukast LC",
-  "allegra":"Fexofenadine","cetzine":"Cetirizine","cetrizine":"Cetirizine",
-  "combi flame":"Combiflam","combifleam":"Combiflam",
-  "dolo six fifty":"Dolo 650","crosin":"Crocin","ibuprofin":"Ibuprofen",
-  "atorva":"Atorvastatin","beco suels":"Becosules","beco souls":"Becosules",
-  "metro":"Metronidazole","flagyl":"Metronidazole",
-  "vitamin c":"Vitamin C","vitamin d":"Vitamin D","vitamin b12":"Vitamin B12",
+  // ── NUMBER WORDS (Hindi + English) ──
+  "ek":"1","do":"2","teen":"3","char":"4","paanch":"5",
+  "chhe":"6","saat":"7","aath":"8","nau":"9","das":"10",
+  "gyarah":"11","barah":"12","terah":"13","chaudah":"14","pandrah":"15",
+  "solah":"16","satrah":"17","atharah":"18","unees":"19","bees":"20",
+  "pachees":"25","tees":"30","chalees":"40","pachaas":"50",
+  "saath":"70","assi":"80","nabbe":"90","sau":"100",
+
+  // ── COMPOUND NUMBERS ──
+  "six fifty":"650","five hundred":"500","two fifty":"250",
+  "seven fifty":"750","one fifty":"150","seventy five":"75",
+  "two hundred fifty":"250","one thousand":"1000","five fifty":"550",
+  "three fifty":"350","four fifty":"450","eight fifty":"850",
+  "sixty five":"65","forty five":"45","thirty five":"35",
+  "twenty five":"25","twenty two":"22",
+
+  // ── MEDICINE NAMES — how en-US hears them ──
+  // Dolo / Paracetamol
+  "dolo six fifty":"Dolo 650","dolo 6 50":"Dolo 650","polo 650":"Dolo 650",
+  "dollar 650":"Dolo 650","dolo":"Dolo","polo":"Dolo",
+  "paracetamol":"Paracetamol","para":"Paracetamol",
+  "pcm":"Paracetamol","p c m":"Paracetamol","pci":"Paracetamol",
+
+  // Crocin
+  "crocin":"Crocin","crosin":"Crocin","krosheen":"Crocin",
+  "croc in":"Crocin","corosin":"Crocin",
+
+  // Combiflam / Ibuprofen
+  "combiflam":"Combiflam","combi flame":"Combiflam","combine flame":"Combiflam",
+  "combifleam":"Combiflam","combi flam":"Combiflam",
+  "ibuprofen":"Ibuprofen","ibuprofin":"Ibuprofen","ibupro":"Ibuprofen",
+  "brufen":"Ibuprofen","brufin":"Ibuprofen",
+
+  // Azithromycin
+  "azithromycin":"Azithromycin","azee":"Azithromycin","azimax":"Azithromycin",
+  "azithro":"Azithromycin","a zi":"Azithromycin","as he threw me sin":"Azithromycin",
+  "azithro mycin":"Azithromycin","zithromax":"Azithromycin",
+
+  // Amoxicillin / Augmentin
+  "amoxicillin":"Amoxicillin","amoxy":"Amoxicillin","amoxil":"Amoxicillin",
+  "amox":"Amoxicillin","a moxie":"Amoxicillin",
+  "augmentin":"Augmentin","ogmentin":"Augmentin","aug":"Augmentin",
+
+  // Pantoprazole / Omeprazole
+  "pantoprazole":"Pantoprazole","pan 40":"Pantoprazole 40",
+  "pantofast":"Pantoprazole","panto":"Pantoprazole",
+  "pan d":"Pan-D","pantop":"Pantoprazole",
+  "omeprazole":"Omeprazole","omez":"Omeprazole","omi":"Omeprazole",
+  "omee":"Omeprazole",
+
+  // Ranitidine / Antacids
+  "ranitidine":"Ranitidine","rantac":"Ranitidine","ranta":"Ranitidine",
+  "gelusil":"Gelusil","gelucil":"Gelusil","digene":"Digene",
+  "antacid":"Antacid","an acid":"Antacid",
+
+  // Cetirizine / Allergy
+  "cetirizine":"Cetirizine","cetrizine":"Cetirizine","cetzine":"Cetirizine",
+  "situating":"Cetirizine","sitter is in":"Cetirizine","setrizine":"Cetirizine",
+  "fexofenadine":"Fexofenadine","allegra":"Allegra","aloe gruff":"Allegra",
+  "montair":"Montair","montek":"Montelukast","montelukast":"Montelukast",
+  "montek lc":"Montelukast LC",
+
+  // Metformin / Diabetes
+  "metformin":"Metformin","metform":"Metformin","met form in":"Metformin",
+  "glycomet":"Glycomet","gluco met":"Glycomet",
+  "glipizide":"Glipizide","glimpiride":"Glimepiride","glimepiride":"Glimepiride",
+
+  // Atorvastatin / Cholesterol
+  "atorvastatin":"Atorvastatin","atorva":"Atorvastatin","ato":"Atorvastatin",
+  "lipitor":"Atorvastatin","storvas":"Storvas",
+
+  // Antibiotics
+  "levofloxacin":"Levofloxacin","levoflox":"Levofloxacin","levo":"Levofloxacin",
+  "ciprofloxacin":"Ciprofloxacin","cipro":"Ciprofloxacin","cifran":"Cifran",
+  "metronidazole":"Metronidazole","metro":"Metronidazole","flagyl":"Flagyl",
+  "doxycycline":"Doxycycline","doxy":"Doxycycline",
+  "cloxacillin":"Cloxacillin","clox":"Cloxacillin",
+
+  // Vitamins / Supplements
+  "vitamin c":"Vitamin C","vitamin d":"Vitamin D","vitamin d3":"Vitamin D3",
+  "vitamin b12":"Vitamin B12","vitamin b complex":"Vitamin B Complex",
+  "vitamin e":"Vitamin E","multivitamin":"Multivitamin",
+  "calcium":"Calcium","cal":"Calcium","shelcal":"Shelcal",
+  "becosules":"Becosules","beco suels":"Becosules","beco souls":"Becosules",
+
+  // BP / Heart
+  "amlodipine":"Amlodipine","amlo":"Amlodipine","amlovas":"Amlovas",
+  "telmisartan":"Telmisartan","telma":"Telma","telmikind":"Telmikind",
+  "aspirin":"Aspirin","ecosprin":"Ecosprin","eco sprint":"Ecosprin",
+  "clopidogrel":"Clopidogrel","clopilet":"Clopilet",
+
+  // Syrups / common
+  "benadryl":"Benadryl","bene drill":"Benadryl","bee and drill":"Benadryl",
+  "grilinctus":"Grilinctus","grilli incutus":"Grilinctus",
+  "ascoril":"Ascoril","ask or ill":"Ascoril",
+  "alex":"Alex","alexa":"Alex",
+  "phensedyl":"Phensedyl","fen sedyl":"Phensedyl",
+
+  // Units / billing words
+  "strip":"strip","strips":"strip","estreep":"strip","strip s":"strip",
+  "tablet":"tablet","tablets":"tablet","tab":"tablet","tabs":"tablet",
+  "syrup":"syrup","sirup":"syrup","bottle":"bottle","bottles":"bottle",
+  "rupees":"","rupee":"","rs":"","rs.":"","price":"",
 };
+
+// ── APPLY CORRECTIONS ──
+function applyCorrections(text) {
+  let r = text.toLowerCase().trim();
+
+  // 1. Spoken digits — replace digit words with numerals
+  const numMap = {
+    'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5',
+    'six':'6','seven':'7','eight':'8','nine':'9','ten':'10',
+    'eleven':'11','twelve':'12','thirteen':'13','fourteen':'14','fifteen':'15',
+    'sixteen':'16','seventeen':'17','eighteen':'18','nineteen':'19','twenty':'20',
+  };
+  Object.entries(numMap).forEach(([w,n]) =>
+    r = r.replace(new RegExp('\\b' + w + '\\b', 'gi'), n)
+  );
+
+  // 2. Multi-word corrections first (longest match wins)
+  const sorted = Object.entries(VOICE_CORRECTIONS).sort((a,b) => b[0].length - a[0].length);
+  for (const [wrong, right] of sorted) {
+    r = r.replace(new RegExp('\\b' + wrong.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b', 'gi'), right);
+  }
+
+  // 3. Clean up extra spaces
+  r = r.replace(/\s+/g, ' ').trim();
+  return r;
+}
 
 // ═══════════════════════════════════════════════════
 //  STATE
@@ -486,7 +603,7 @@ function startListening() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { setStatus('error', 'Speech Recognition not supported. Use Chrome on Android.'); return; }
   recognition = new SR();
-  recognition.lang = 'en-IN';
+  recognition.lang = 'en-US';
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.onstart = () => {
@@ -634,13 +751,6 @@ function handleVoiceInput(raw) {
 // ═══════════════════════════════════════════════════
 //  CORRECTIONS + UTILITIES
 // ═══════════════════════════════════════════════════
-function applyCorrections(text) {
-  let r = text;
-  const nums = {'ek':'1','do':'2','teen':'3','char':'4','paanch':'5','chhe':'6','saat':'7','aath':'8','nau':'9','das':'10','eleven':'11','twelve':'12','fifteen':'15','twenty':'20','thirty':'30','fifty':'50','hundred':'100','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9','ten':'10'};
-  Object.entries(nums).forEach(([w,n]) => r = r.replace(new RegExp('\\b'+w+'\\b','gi'), n));
-  Object.entries(VOICE_CORRECTIONS).forEach(([w,c]) => r = r.replace(new RegExp('\\b'+w+'\\b','gi'), c));
-  return r;
-}
 function toTitleCase(str) {
   return str.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase())
     .replace(/\bDr\b/gi, 'Dr.').replace(/\bDr\.\./g, 'Dr.');
@@ -1171,12 +1281,11 @@ let _bestVoice = null;
 function getBestVoice() {
   if (_bestVoice) return _bestVoice;
   const voices = window.speechSynthesis.getVoices();
-  // Priority: en-IN female > en-IN > en-GB > en-US
   const preferred = [
     v => v.lang === 'en-IN' && v.name.toLowerCase().includes('female'),
     v => v.lang === 'en-IN',
-    v => v.lang.startsWith('en-IN'),
-    v => v.lang === 'en-GB',
+    v => v.lang === 'en-US' && v.name.toLowerCase().includes('female'),
+    v => v.lang === 'en-US',
     v => v.lang.startsWith('en'),
   ];
   for (const fn of preferred) {
