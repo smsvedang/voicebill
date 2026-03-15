@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing</title>
+<title>Sahyog Medical – Voice Billing v3</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
@@ -497,7 +497,6 @@ function toggleMic() {
   if (listening) {
     stopMic();
   } else {
-    // Start wizard directly — no need to say anything first
     if (!wiz) startWizard();
     startMic();
   }
@@ -505,69 +504,69 @@ function toggleMic() {
 
 function startMic() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { st('err', 'Speech Recognition not supported — use Chrome on Android'); return; }
+  if (!SR) { st('err', 'Speech Recognition not supported — use Chrome'); return; }
+  if (listening) return;
 
-  listening = true;
-  document.getElementById('micBtn').classList.add('on');
-  document.getElementById('mlbl').textContent = 'STOP';
+  recog = new SR();
+  recog.lang = 'en-US';
+  recog.continuous = true;      // stay on — no restart needed
+  recog.interimResults = false; // final only — no duplicate
 
-  function listen() {
-    if (!listening) return;
-    recog = new SR();
-    recog.lang = 'en-US';
-    recog.continuous = false;       // single utterance — more reliable on mobile
-    recog.interimResults = false;   // final only — no duplicate processing
+  recog.onstart = () => {
+    listening = true;
+    document.getElementById('micBtn').classList.add('on');
+    document.getElementById('mlbl').textContent = 'STOP';
+    st('on', '🎤 Sun raha hoon...');
+  };
 
-    recog.onresult = (e) => {
-      const final = e.results[0]?.[0]?.transcript?.trim();
-      recog = null; // prevent onend from also restarting
-      if (final) {
+  recog.onresult = (e) => {
+    // Get all new final results
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        const txt = e.results[i][0].transcript.trim();
+        if (!txt) continue;
         if (wizStep === 'spell')
-          st('on', `🔤 <span class="live">"${final}"</span>`);
+          st('on', `🔤 <span class="live">"${txt}"</span>`);
         else
-          st('on', `<span class="live">"${final}"</span>`);
-        handleVoice(final);
+          st('on', `<span class="live">"${txt}"</span>`);
+        handleVoice(txt);
       }
-      if (listening) setTimeout(listen, 200);
-    };
+    }
+  };
 
-    recog.onerror = (e) => {
-      if (e.error === 'no-speech') {
-        // Just restart silently
-        if (listening) setTimeout(listen, 300);
-      } else if (e.error === 'aborted') {
-        // aborted by us — ignore
-      } else {
-        st('err', 'Mic error: ' + e.error);
-        stopMic();
-      }
-    };
+  recog.onerror = (e) => {
+    if (e.error === 'no-speech') return;     // normal — keep going
+    if (e.error === 'aborted')   return;     // we stopped it
+    if (e.error === 'network')   return;     // transient
+    st('err', 'Mic error: ' + e.error);
+    stopMic();
+  };
 
-    recog.onend = () => {
-      // Only restart if onresult didn't already handle it (recog would be null if it did)
-      if (listening && recog !== null) setTimeout(listen, 300);
-    };
+  recog.onend = () => {
+    // Chrome mobile sometimes stops recognition unexpectedly — restart if still wanted
+    if (listening) {
+      setTimeout(() => {
+        if (listening && recog) {
+          try { recog.start(); } catch(e) {}
+        }
+      }, 200);
+    }
+  };
 
-    try { recog.start(); } catch(e) { /* already started */ }
+  try { recog.start(); } catch(e) {
+    st('err', 'Mic start failed: ' + e.message);
   }
-
-  listen();
 }
 
 function stopMic() {
   listening = false;
-  if (recog) { try { recog.stop(); } catch(e){} recog = null; }
+  if (recog) {
+    try { recog.stop(); } catch(e) {}
+    recog = null;
+  }
   document.getElementById('micBtn').classList.remove('on');
   document.getElementById('mlbl').textContent = 'START';
-  if (!wiz) st('', 'Stopped. Press 🎤 to add next medicine.');
-}
-
-function stopMic() {
-  listening = false;
-  if (recog) { recog.stop(); recog = null; }
-  document.getElementById('micBtn').classList.remove('on');
-  document.getElementById('mlbl').textContent = 'START';
-  st('', 'Stopped.');
+  if (!wiz) st('', 'Stopped. 🎤 Press karo next medicine ke liye.');
 }
 
 // ══════════════════════════════════════════
@@ -1050,40 +1049,23 @@ async function btPrint() {
     window.print(); return;
   }
   try {
-    toast('Printer dhundh raha hai...', 'ok');
-    // Try with filters first, fallback to acceptAllDevices
-    let dev;
-    try {
-      dev = await navigator.bluetooth.requestDevice({
-        filters: [
-          { namePrefix: 'Printer' }, { namePrefix: 'MTP' },
-          { namePrefix: 'RPP' },     { namePrefix: 'BT' },
-          { namePrefix: 'pos' },     { namePrefix: 'POS' },
-          { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
-          { services: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] },
-        ],
-        optionalServices: [
-          '000018f0-0000-1000-8000-00805f9b34fb',
-          'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-          '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-        ]
-      });
-    } catch(filterErr) {
-      // Filters failed — show all devices
-      dev = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: [
-          '000018f0-0000-1000-8000-00805f9b34fb',
-          'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-          '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-        ]
-      });
-    }
+    toast('Printer select karo...', 'ok');
 
-    toast('Connecting...', 'ok');
+    // acceptAllDevices — shows ALL paired/nearby devices, no filter
+    const dev = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb',
+        'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+        '00001101-0000-1000-8000-00805f9b34fb',
+      ]
+    });
+
+    toast('Connecting to ' + (dev.name || 'printer') + '...', 'ok');
     const server = await dev.gatt.connect();
 
-    // Try all known thermal printer UUID profiles
+    // Try known thermal printer characteristic profiles
     let char = null;
     const profiles = [
       { s:'000018f0-0000-1000-8000-00805f9b34fb', c:'00002af1-0000-1000-8000-00805f9b34fb' },
@@ -1097,44 +1079,47 @@ async function btPrint() {
         break;
       } catch(e) {}
     }
-    // Last resort — try getting any writable characteristic
+
+    // Fallback — scan all services for any writable characteristic
     if (!char) {
-      const services = await server.getPrimaryServices();
-      for (const svc of services) {
-        const chars = await svc.getCharacteristics();
-        for (const ch of chars) {
-          if (ch.properties.write || ch.properties.writeWithoutResponse) {
-            char = ch; break;
+      try {
+        const services = await server.getPrimaryServices();
+        outer: for (const svc of services) {
+          const chars = await svc.getCharacteristics();
+          for (const ch of chars) {
+            if (ch.properties.write || ch.properties.writeWithoutResponse) {
+              char = ch; break outer;
+            }
           }
         }
-        if (char) break;
-      }
+      } catch(e) {}
     }
-    if (!char) throw new Error('No writable characteristic found on printer');
+
+    if (!char) throw new Error('No writable characteristic found. Check printer is in print mode.');
 
     toast('Printing...', 'ok');
-    const data = buildEscPos();
+    const data  = buildEscPos();
     const CHUNK = 128;
     for (let i = 0; i < data.length; i += CHUNK) {
       const chunk = data.slice(i, i + CHUNK);
       try {
-        if (char.properties.writeWithoutResponse) {
+        if (char.properties.writeWithoutResponse)
           await char.writeValueWithoutResponse(chunk);
-        } else {
+        else
           await char.writeValue(chunk);
-        }
       } catch(e) {
-        await char.writeValue(chunk);
+        try { await char.writeValue(chunk); } catch(e2) {}
       }
-      await new Promise(r => setTimeout(r, 60));
+      await new Promise(r => setTimeout(r, 80));
     }
-    toast('✓ Printed!', 'ok');
+    toast('✓ Print ho gaya!', 'ok');
+
   } catch(e) {
     if (e.name === 'NotFoundError') {
-      toast('Printer cancel kiya', 'er');
+      // User cancelled — do nothing
     } else {
       toast('BT Error: ' + e.message, 'er');
-      setTimeout(() => window.print(), 500);
+      setTimeout(() => window.print(), 800);
     }
   }
 }
