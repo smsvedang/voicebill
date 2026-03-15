@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3</title>
+<title>Sahyog Medical – Voice Billing v3.1</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -417,7 +417,7 @@ const CONFIG = {
   STORE_NAME:    "Sahyog Medical Store",
   STORE_ADDR:    "Manasa, Madhya Pradesh - 458110",
   STORE_PHONE:   "7415543744",
-  STORE_EMAIL:   "sahyogmedicalonline@gmail.com",
+  STORE_EMAIL:   "",
   STORE_GSTIN:   "23BUQPS8562N1ZL",
   STORE_DL1:     "",
   STORE_DL2:     "",
@@ -784,8 +784,8 @@ function selectMatch(idx) {
   if (idx < 0 || idx >= matchCandidates.length) return;
   hideMatchPanel();
   const med = matchCandidates[idx];
-  speak(med.name + ' selected. Strip hai, Syrup hai, ya Tablet?');
-  startWizard({ name: med.name });
+  speak(med.name + ' selected');
+  startWizard({ name: med.name }); // no _type — wizard will ask
 }
 
 // ═══════════════════════════════════════════════════
@@ -1283,10 +1283,13 @@ Rules:
       + (p.confidence === 'low' ? ' ⚠ low confidence' : '');
     setStatus('listening', '⚡ ' + summary);
 
-    // Build wizard item — only ask for fields Groq didn't fill
+    // Only trust Groq's type if user explicitly said strip/syrup/tablet
+    // Otherwise ask — default "strip" from Groq is just a guess
+    const typeWords = /strip|strips|syrup|liquid|bottle|tablet|tab|loose/i.test(rawText);
+
     startWizard({
       name:           p.name,
-      _type:          (p.type || 'strip').toLowerCase(),
+      _type:          typeWords ? (p.type || 'strip').toLowerCase() : null,
       qty:            p.qty            || null,
       price:          p.price          || null,
       tabs_per_strip: p.tabs_per_strip || null,
