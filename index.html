@@ -252,7 +252,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 <!-- HELP -->
 <div class="help">
-  <strong>Medicine add karo:</strong> 🎤 press → naam spell karo → type → qty → price<br>
+  <strong>Medicine add karo:</strong> 🎤 press karo → spelling shuru → naam spell karo → type → qty → price<br>
   <strong>Patient:</strong> <span class="cmd">"patient Ramesh Kumar"</span>
   <span class="cmd">"doctor Sharma"</span>
   <strong>Controls:</strong> <span class="cmd">"last hata"</span>
@@ -435,44 +435,73 @@ function speak(text) {
 // ══════════════════════════════════════════
 //  STT — mic
 // ══════════════════════════════════════════
-function toggleMic() { listening ? stopMic() : startMic(); }
+function toggleMic() {
+  if (listening) {
+    stopMic();
+  } else {
+    // Start wizard directly — no need to say anything first
+    if (!wiz) startWizard();
+    startMic();
+  }
+}
 
 function startMic() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { st('err', 'Speech Recognition not supported — use Chrome on Android'); return; }
-  recog = new SR();
-  recog.lang = 'en-US';
-  recog.continuous = true;
-  recog.interimResults = true;
 
-  recog.onstart = () => {
-    listening = true;
-    document.getElementById('micBtn').classList.add('on');
-    document.getElementById('mlbl').textContent = 'STOP';
-    if (!wiz) st('on', '🎤 Sun raha hoon... medicine ke liye boliye ya mic press karein');
-  };
+  listening = true;
+  document.getElementById('micBtn').classList.add('on');
+  document.getElementById('mlbl').textContent = 'STOP';
 
-  recog.onresult = (e) => {
-    let interim = '', final = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) final += t; else interim += t;
-    }
-    // Show interim
-    if (interim) {
-      if (wizStep === 'spell')
-        st('on', `🔤 <span class="live">"${interim}"</span>`);
-      else
-        st('on', `<span class="live">"${interim}"</span>`);
-    }
-    if (final.trim()) handleVoice(final.trim());
-  };
+  function listen() {
+    if (!listening) return;
+    recog = new SR();
+    recog.lang = 'en-US';
+    recog.continuous = false;       // single utterance — more reliable on mobile
+    recog.interimResults = false;   // final only — no duplicate processing
 
-  recog.onerror = (e) => {
-    if (e.error !== 'no-speech') { st('err', 'Mic error: ' + e.error); stopMic(); }
-  };
-  recog.onend = () => { if (listening) recog.start(); };
-  recog.start();
+    recog.onresult = (e) => {
+      const final = e.results[0]?.[0]?.transcript?.trim();
+      recog = null; // prevent onend from also restarting
+      if (final) {
+        if (wizStep === 'spell')
+          st('on', `🔤 <span class="live">"${final}"</span>`);
+        else
+          st('on', `<span class="live">"${final}"</span>`);
+        handleVoice(final);
+      }
+      if (listening) setTimeout(listen, 200);
+    };
+
+    recog.onerror = (e) => {
+      if (e.error === 'no-speech') {
+        // Just restart silently
+        if (listening) setTimeout(listen, 300);
+      } else if (e.error === 'aborted') {
+        // aborted by us — ignore
+      } else {
+        st('err', 'Mic error: ' + e.error);
+        stopMic();
+      }
+    };
+
+    recog.onend = () => {
+      // Only restart if onresult didn't already handle it (recog would be null if it did)
+      if (listening && recog !== null) setTimeout(listen, 300);
+    };
+
+    try { recog.start(); } catch(e) { /* already started */ }
+  }
+
+  listen();
+}
+
+function stopMic() {
+  listening = false;
+  if (recog) { try { recog.stop(); } catch(e){} recog = null; }
+  document.getElementById('micBtn').classList.remove('on');
+  document.getElementById('mlbl').textContent = 'START';
+  if (!wiz) st('', 'Stopped. Press 🎤 to add next medicine.');
 }
 
 function stopMic() {
@@ -542,13 +571,10 @@ function handleVoice(raw) {
   if (wizStep === 'qty' || wizStep === 'price' || wizStep === 'tabs') {
     const num = parseNum(t);
     if (num !== null && num >= 0) { submitNum(num); return; }
-    speak('Number bolo'); return;
+    speak('Number bolo');
+    return;
   }
-
-  // ── Start new wizard ──
-  if (!wiz) {
-    startWizard(); return;
-  }
+  // Anything else while no wizard — ignore
 }
 
 // ── Parse spoken number ──
