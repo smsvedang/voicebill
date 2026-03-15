@@ -3,340 +3,266 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3.1</title>
+<title>Sahyog Medical – Voice Billing</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
-:root {
-  --bg:#0a0f0a; --surface:#111811; --card:#151e15; --border:#1e2e1e;
-  --accent:#22c55e; --accent-dim:rgba(34,197,94,0.12); --accent-glow:rgba(34,197,94,0.25);
-  --text:#e8f5e8; --text2:#8fba8f; --text3:#4a6b4a;
-  --red:#ef4444; --amber:#f59e0b; --blue:#60a5fa;
-  --mono:'IBM Plex Mono',monospace; --head:'Rajdhani',sans-serif; --radius:8px;
+:root{
+  --bg:#0a0f0a;--surface:#111811;--card:#151e15;--border:#1e2e1e;
+  --accent:#22c55e;--adim:rgba(34,197,94,0.12);--aglow:rgba(34,197,94,0.25);
+  --text:#e8f5e8;--text2:#8fba8f;--text3:#4a6b4a;
+  --red:#ef4444;--amber:#f59e0b;--blue:#60a5fa;
+  --mono:'IBM Plex Mono',monospace;--head:'Rajdhani',sans-serif;--r:8px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:var(--head);min-height:100vh;overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(34,197,94,0.05) 0%,transparent 70%);pointer-events:none;z-index:0;}
-.container{max-width:840px;margin:0 auto;padding:12px 16px 80px;position:relative;z-index:1;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(34,197,94,0.05),transparent 70%);pointer-events:none;z-index:0;}
+.wrap{max-width:820px;margin:0 auto;padding:12px 16px 80px;position:relative;z-index:1;}
 
-/* ── HEADER ── */
-.header{text-align:center;padding:18px 0 14px;border-bottom:1px solid var(--border);margin-bottom:14px;}
-.store-name{font-size:24px;font-weight:700;letter-spacing:3px;color:var(--accent);text-transform:uppercase;}
-.store-tagline{font-size:10px;letter-spacing:4px;color:var(--text3);text-transform:uppercase;margin-top:2px;}
-.store-addr{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;}
-.bill-meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;font-family:var(--mono);color:var(--text3);}
-.bill-no{color:var(--accent);font-weight:600;font-size:13px;}
+/* HEADER */
+.hdr{text-align:center;padding:16px 0 12px;border-bottom:1px solid var(--border);margin-bottom:14px;}
+.store-name{font-size:22px;font-weight:700;letter-spacing:3px;color:var(--accent);text-transform:uppercase;}
+.store-sub{font-size:10px;letter-spacing:4px;color:var(--text3);text-transform:uppercase;margin-top:2px;}
+.store-addr{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:3px;}
+.bill-meta{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;font-family:var(--mono);color:var(--text3);}
+.bill-no{color:var(--accent);font-weight:600;}
 
-/* ── STATUS ── */
-.status-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;min-height:42px;font-family:var(--mono);font-size:12px;}
-.status-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:all 0.3s;}
-.status-dot.listening{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 1.2s infinite;}
-.status-dot.thinking{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:pulse 0.8s infinite;}
-.status-dot.waiting{background:var(--blue);box-shadow:0 0 8px var(--blue);animation:pulse 1s infinite;}
-.status-dot.error{background:var(--red);}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-.status-text{color:var(--text2);flex:1;line-height:1.5;}
-.transcript-live{color:var(--accent);font-style:italic;}
+/* STATUS */
+.status{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:9px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;min-height:42px;font-family:var(--mono);font-size:12px;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:all .3s;}
+.dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 1.2s infinite;}
+.dot.think{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:pulse .8s infinite;}
+.dot.err{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.stxt{color:var(--text2);flex:1;line-height:1.5;}
+.live{color:var(--accent);font-style:italic;}
 
-/* ── MIC ── */
-.mic-section{display:flex;justify-content:center;margin-bottom:14px;}
-.mic-btn{width:76px;height:76px;border-radius:50%;border:2px solid var(--accent);background:var(--accent-dim);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:all 0.2s;font-family:var(--head);font-size:9px;font-weight:600;letter-spacing:1px;color:var(--accent);text-transform:uppercase;position:relative;overflow:hidden;}
-.mic-btn svg{width:26px;height:26px;fill:var(--accent);}
-.mic-btn:hover{background:rgba(34,197,94,0.2);transform:scale(1.05);}
-.mic-btn.active{background:var(--accent);border-color:var(--accent);box-shadow:0 0 24px var(--accent-glow);animation:mic-pulse 1.5s infinite;}
-.mic-btn.active svg{fill:#0a0f0a;}
-.mic-btn.active .mic-label{color:#0a0f0a;}
-.mic-btn.waiting-mode{border-color:var(--blue);background:rgba(96,165,250,0.1);}
-.mic-btn.waiting-mode svg{fill:var(--blue);}
-.mic-btn.waiting-mode .mic-label{color:var(--blue);}
-@keyframes mic-pulse{0%,100%{box-shadow:0 0 24px var(--accent-glow)}50%{box-shadow:0 0 40px rgba(34,197,94,0.5)}}
-.mic-ripple{position:absolute;border-radius:50%;border:2px solid currentColor;opacity:0;}
-.mic-btn.active .mic-ripple{border-color:var(--accent);animation:ripple 1.5s infinite;}
-@keyframes ripple{0%{width:76px;height:76px;opacity:0.6}100%{width:160px;height:160px;opacity:0}}
+/* MIC */
+.mic-wrap{display:flex;justify-content:center;margin-bottom:14px;}
+.mic{width:76px;height:76px;border-radius:50%;border:2px solid var(--accent);background:var(--adim);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:all .2s;font-family:var(--head);font-size:9px;font-weight:600;letter-spacing:1px;color:var(--accent);text-transform:uppercase;position:relative;overflow:hidden;}
+.mic svg{width:26px;height:26px;fill:var(--accent);}
+.mic:hover{background:rgba(34,197,94,.2);}
+.mic.on{background:var(--accent);border-color:var(--accent);box-shadow:0 0 24px var(--aglow);animation:mpulse 1.5s infinite;}
+.mic.on svg,.mic.on .mlbl{fill:#0a0f0a;color:#0a0f0a;}
+@keyframes mpulse{0%,100%{box-shadow:0 0 24px var(--aglow)}50%{box-shadow:0 0 40px rgba(34,197,94,.5)}}
+.ripple{position:absolute;border-radius:50%;border:2px solid var(--accent);opacity:0;}
+.mic.on .ripple{animation:ripple 1.5s infinite;}
+@keyframes ripple{0%{width:76px;height:76px;opacity:.6}100%{width:160px;height:160px;opacity:0}}
 
-/* ── ASK BANNER ── */
-.ask-banner{background:linear-gradient(135deg,rgba(96,165,250,0.12),rgba(96,165,250,0.05));border:1px solid rgba(96,165,250,0.35);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;display:none;align-items:center;gap:12px;}
-.ask-banner.show{display:flex;}
-.ask-icon{font-size:20px;flex-shrink:0;}
-.ask-body{flex:1;}
-.ask-q{color:var(--blue);font-weight:700;font-size:15px;letter-spacing:0.5px;}
-.ask-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px;}
-.ask-input-row{display:flex;gap:8px;margin-top:8px;}
-.ask-txt{background:var(--bg);border:1px solid rgba(96,165,250,0.3);color:var(--text);border-radius:4px;padding:7px 10px;font-family:var(--mono);font-size:13px;outline:none;flex:1;transition:border-color 0.2s;}
-.ask-txt:focus{border-color:var(--blue);}
-.ask-ok{background:var(--blue);color:#0a0f0a;border:none;border-radius:4px;padding:7px 14px;font-family:var(--head);font-weight:600;font-size:13px;cursor:pointer;}
+/* SPELLING BANNER */
+.spell-banner{display:none;background:var(--surface);border:2px solid var(--accent);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;}
+.spell-banner.show{display:block;}
+.spell-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:8px;}
+.spell-display{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--accent);letter-spacing:4px;min-height:44px;padding:8px 12px;background:var(--bg);border-radius:6px;margin-bottom:10px;border:1px solid var(--border);word-break:break-all;}
+.spell-cursor{display:inline-block;width:2px;height:28px;background:var(--accent);margin-left:2px;animation:blink .8s infinite;vertical-align:middle;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.spell-hint{font-size:11px;font-family:var(--mono);color:var(--text3);line-height:1.9;margin-bottom:10px;}
+.spell-hint .cmd{color:var(--accent);background:rgba(34,197,94,.07);padding:1px 5px;border-radius:3px;}
+.spell-done-btn{background:var(--accent);color:#0a0f0a;border:none;border-radius:var(--r);padding:11px 24px;font-family:var(--head);font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;width:100%;}
+.spell-done-btn:hover{background:#16a34a;}
 
-/* ── PATIENT / DOCTOR CARD ── */
-.patient-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;}
-.card-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;font-family:var(--mono);}
-.patient-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.field-wrap{display:flex;flex-direction:column;gap:4px;}
-.field-wrap.full{grid-column:1/-1;}
-.field-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);}
-.field-row{display:flex;gap:6px;align-items:center;}
-.field-input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:8px 10px;font-family:var(--mono);font-size:13px;outline:none;transition:border-color 0.2s;width:100%;}
-.field-input:focus{border-color:var(--accent);}
-.field-input.filled{border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.03);}
-.voice-field-btn{width:32px;height:32px;flex-shrink:0;border-radius:4px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;color:var(--text3);}
-.voice-field-btn:hover{border-color:var(--accent);color:var(--accent);}
-.voice-field-btn.recording{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);animation:pulse 1s infinite;}
-.voice-field-btn svg{width:15px;height:15px;fill:currentColor;}
+/* ASK BANNER */
+.ask-banner{display:none;background:linear-gradient(135deg,rgba(96,165,250,.1),rgba(96,165,250,.04));border:1px solid rgba(96,165,250,.3);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;}
+.ask-banner.show{display:block;}
+.ask-q{color:var(--blue);font-weight:700;font-size:16px;margin-bottom:4px;}
+.ask-hint-txt{font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px;}
+.type-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px;}
+.type-btn{background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:11px 8px;font-family:var(--head);font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;}
+.type-btn:hover,.type-btn.sel{background:var(--adim);border-color:var(--accent);color:var(--accent);}
+.ask-row{display:flex;gap:8px;margin-top:4px;}
+.ask-input{background:var(--bg);border:1px solid rgba(96,165,250,.3);color:var(--text);border-radius:4px;padding:9px 10px;font-family:var(--mono);font-size:16px;outline:none;flex:1;transition:border-color .2s;}
+.ask-input:focus{border-color:var(--blue);}
+.ask-ok{background:var(--blue);color:#0a0f0a;border:none;border-radius:4px;padding:9px 18px;font-family:var(--head);font-weight:700;font-size:14px;cursor:pointer;}
 
-/* ── HELP ── */
-.help-strip{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:11px;font-family:var(--mono);color:var(--text3);line-height:2;}
-.help-strip strong{color:var(--text2);}
-.cmd{color:var(--accent);background:rgba(34,197,94,0.06);padding:1px 4px;border-radius:3px;}
+/* PATIENT CARD */
+.pt-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px;}
+.pt-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:var(--mono);}
+.pt-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.fwrap{display:flex;flex-direction:column;gap:3px;}
+.flbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);}
+.finput{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:7px 10px;font-family:var(--mono);font-size:13px;outline:none;transition:border-color .2s;width:100%;}
+.finput:focus{border-color:var(--accent);}
+.finput.filled{border-color:rgba(34,197,94,.4);}
+.req-star{color:var(--red);}
 
-/* ── ITEMS TABLE ── */
-.items-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;}
-.items-header,.item-row{display:grid;grid-template-columns:1.8fr 44px 44px 54px 54px 72px 28px;padding:8px 10px;align-items:center;gap:2px;}
-.items-header{background:var(--card);border-bottom:1px solid var(--border);font-size:9px;font-weight:600;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;}
-.items-list{min-height:70px;}
-.item-row{border-bottom:1px solid var(--border);font-size:13px;animation:row-in 0.22s ease;transition:background 0.15s;}
+/* HELP */
+.help{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:9px 13px;margin-bottom:12px;font-size:11px;font-family:var(--mono);color:var(--text3);line-height:2;}
+.help strong{color:var(--text2);}
+.cmd{color:var(--accent);background:rgba(34,197,94,.06);padding:1px 4px;border-radius:3px;}
+
+/* ITEMS TABLE */
+.items-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;}
+.items-head,.item-row{display:grid;grid-template-columns:1.8fr 50px 50px 60px 60px 72px 28px;padding:8px 10px;align-items:center;gap:2px;}
+.items-head{background:var(--card);border-bottom:1px solid var(--border);font-size:9px;font-weight:600;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;}
+.items-body{min-height:60px;}
+.item-row{border-bottom:1px solid var(--border);font-size:13px;animation:rowin .2s ease;transition:background .15s;}
 .item-row:hover{background:var(--card);}
 .item-row:last-child{border-bottom:none;}
-@keyframes row-in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
-.item-name{font-weight:600;color:var(--text);font-size:12px;line-height:1.3;}
-.item-name small{display:block;font-size:10px;color:var(--text3);font-weight:400;font-family:var(--mono);}
-.item-num{font-family:var(--mono);font-size:12px;color:var(--text2);text-align:center;}
-.item-num.dim{color:var(--text3);}
-.item-total{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:500;text-align:right;}
-.del-btn{width:22px;height:22px;border-radius:4px;background:transparent;border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;margin-left:auto;}
-.del-btn:hover{background:rgba(239,68,68,0.15);border-color:var(--red);color:var(--red);}
-.empty-state{padding:30px;text-align:center;color:var(--text3);font-size:13px;font-family:var(--mono);}
-.empty-icon{font-size:28px;margin-bottom:8px;opacity:0.4;}
+@keyframes rowin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.iname{font-weight:600;color:var(--text);font-size:12px;line-height:1.3;}
+.iname small{display:block;font-size:10px;color:var(--text3);font-weight:400;font-family:var(--mono);}
+.inum{font-family:var(--mono);font-size:12px;color:var(--text2);text-align:center;}
+.inum.dim{color:var(--text3);}
+.itotal{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:600;text-align:right;}
+.del{width:22px;height:22px;border-radius:4px;background:transparent;border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-left:auto;}
+.del:hover{background:rgba(239,68,68,.15);border-color:var(--red);color:var(--red);}
+.empty{padding:28px;text-align:center;color:var(--text3);font-size:13px;font-family:var(--mono);}
 
-/* ── MANUAL ENTRY ── */
-.manual-toggle{text-align:center;margin-bottom:12px;}
-.manual-link{font-size:12px;color:var(--text3);cursor:pointer;font-family:var(--mono);text-decoration:underline;transition:color 0.2s;}
-.manual-link:hover{color:var(--text2);}
-.manual-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px;display:none;}
-.manual-form.show{display:block;}
-.manual-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px;}
-.manual-input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:7px 9px;font-family:var(--mono);font-size:12px;outline:none;transition:border-color 0.2s;width:100%;}
-.manual-input::placeholder{color:var(--text3);}
-.manual-input:focus{border-color:var(--accent);}
+/* TOTALS */
+.totals-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;display:none;}
+.trow{display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:13px;}
+.trow:last-child{border-bottom:none;}
+.trow.sub{color:var(--text3);font-size:12px;}
+.trow.roff{color:var(--amber);font-size:12px;}
+.trow.final{background:var(--adim);font-size:16px;font-weight:600;color:var(--accent);}
+.trow.final .tv{font-size:22px;}
+.tcnt{font-size:10px;color:var(--text3);font-family:var(--mono);padding:7px 14px;border-bottom:1px solid var(--border);}
+.disc-row{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;border-bottom:1px solid var(--border);}
+.disc-input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-family:var(--mono);font-size:12px;text-align:right;outline:none;width:60px;}
+.disc-toggle{background:var(--adim);border:1px solid rgba(34,197,94,.3);color:var(--accent);border-radius:4px;padding:3px 8px;font-family:var(--mono);font-size:12px;cursor:pointer;font-weight:600;min-width:26px;}
 
-/* ── TOTALS ── */
-.totals-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;}
-.totals-row{display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:13px;}
-.totals-row:last-child{border-bottom:none;}
-.totals-row.sub{color:var(--text3);font-size:12px;}
-.totals-row.roundoff{color:var(--amber);font-size:12px;}
-.totals-row.discount-row{color:var(--red);font-size:13px;}
-.totals-row.final{background:var(--accent-dim);font-size:16px;font-weight:600;color:var(--accent);}
-.totals-row.final .val{font-size:22px;}
-.item-count-badge{font-size:10px;color:var(--text3);font-family:var(--mono);padding:8px 14px;border-bottom:1px solid var(--border);}
-
-/* ── ACTIONS ── */
+/* ACTIONS */
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-.btn{padding:12px 18px;border-radius:var(--radius);font-family:var(--head);font-size:14px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:none;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
-.btn-primary{background:var(--accent);color:#0a0f0a;}
-.btn-primary:hover{background:#16a34a;transform:translateY(-1px);box-shadow:0 4px 14px rgba(34,197,94,0.3);}
-.btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none;}
-.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
-.btn-ghost:hover{border-color:var(--text2);color:var(--text);}
+.btn{padding:12px;border-radius:var(--r);font-family:var(--head);font-size:14px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:none;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-p{background:var(--accent);color:#0a0f0a;}
+.btn-p:hover{background:#16a34a;transform:translateY(-1px);box-shadow:0 4px 14px rgba(34,197,94,.3);}
+.btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-g{background:transparent;color:var(--text2);border:1px solid var(--border);}
+.btn-g:hover{border-color:var(--text2);color:var(--text);}
+.sheets-st{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:4px;}
+.sheets-st.ok{color:var(--accent);}
+.sheets-st.err{color:var(--red);}
 
-/* ── SHEETS STATUS ── */
-.sheets-status{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:5px;}
-.sheets-status.ok{color:var(--accent);}
-.sheets-status.err{color:var(--red);}
+/* RECEIPT */
+.r-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100;align-items:center;justify-content:center;padding:14px;overflow-y:auto;}
+.r-overlay.show{display:flex;}
+.r-wrap{background:#fff;color:#000;width:100%;max-width:320px;margin:auto;font-family:'Courier New',Courier,monospace;font-size:12px;line-height:1.55;box-shadow:0 0 40px rgba(34,197,94,.3);border-radius:2px;}
+.rb{padding:14px 14px 10px;}
+.rc{text-align:center;}
+.rbold{font-weight:700;}
+.rdiv{border:none;border-top:1px dashed #999;margin:6px 0;}
+.rdivs{border:none;border-top:1px solid #000;margin:6px 0;}
+.rrow{display:flex;justify-content:space-between;}
+.rind{display:flex;justify-content:space-between;padding-left:10px;font-size:11px;color:#444;}
+.rgrand{display:flex;justify-content:space-between;font-weight:700;font-size:15px;border-top:2px solid #000;border-bottom:2px solid #000;padding:4px 0;margin:4px 0;}
+.r-actions{display:flex;gap:8px;justify-content:center;padding:12px;background:#f0f0f0;border-top:1px dashed #ccc;flex-wrap:wrap;}
+.rb-g{padding:8px 16px;border:none;border-radius:4px;cursor:pointer;font-family:var(--head);font-weight:600;font-size:13px;background:#22c55e;color:#0a0f0a;}
+.rb-gr{background:#ddd;color:#333;}
 
-/* ── TOAST ── */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);border:1px solid var(--border);padding:9px 18px;border-radius:20px;font-size:12px;font-family:var(--mono);color:var(--text2);transition:transform 0.3s;z-index:200;white-space:nowrap;}
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);border:1px solid var(--border);padding:8px 18px;border-radius:20px;font-size:12px;font-family:var(--mono);color:var(--text2);transition:transform .3s;z-index:200;white-space:nowrap;}
 .toast.show{transform:translateX(-50%) translateY(0);}
-.toast.success{border-color:var(--accent);color:var(--accent);}
-.toast.error{border-color:var(--red);color:var(--red);}
-
-/* ══════════════════════════════════════════════
-   THERMAL RECEIPT
-══════════════════════════════════════════════ */
-.receipt-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;align-items:center;justify-content:center;padding:16px;overflow-y:auto;}
-.receipt-overlay.show{display:flex;}
-
-/* Thermal paper simulation */
-.receipt-wrap{
-  background:#fff;color:#000;
-  width:100%;max-width:320px;
-  margin:auto;
-  font-family:'Courier New',Courier,monospace;
-  font-size:12px;line-height:1.55;
-  box-shadow:0 0 40px rgba(34,197,94,0.35),4px 4px 0 #ccc;
-  border-radius:2px;
-}
-.r-body{padding:14px 14px 10px;}
-.r-center{text-align:center;}
-.r-bold{font-weight:700;}
-.r-divider{border:none;border-top:1px dashed #999;margin:7px 0;}
-.r-divider-solid{border:none;border-top:1px solid #000;margin:7px 0;}
-.r-row{display:flex;justify-content:space-between;align-items:baseline;}
-.r-row-indent{display:flex;justify-content:space-between;padding-left:10px;font-size:11px;color:#444;}
-.r-name{font-weight:700;font-size:13px;}
-.r-total-row{display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-top:2px;}
-.r-roff{display:flex;justify-content:space-between;font-size:11px;color:#666;}
-.r-grand{display:flex;justify-content:space-between;font-weight:700;font-size:15px;border-top:2px solid #000;border-bottom:2px solid #000;padding:4px 0;margin:4px 0;}
-
-.receipt-actions{display:flex;gap:8px;justify-content:center;padding:12px 14px;background:#f0f0f0;border-top:1px dashed #ccc;flex-wrap:wrap;}
-.r-btn{padding:8px 16px;border:none;border-radius:4px;cursor:pointer;font-family:var(--head);font-weight:600;font-size:13px;}
-.r-btn-green{background:#22c55e;color:#0a0f0a;}
-.r-btn-gray{background:#ddd;color:#333;}
-
-/* Patient name required highlight */
-.field-input.required-empty{border-color:var(--red)!important;animation:shake 0.4s;}
+.toast.ok{border-color:var(--accent);color:var(--accent);}
+.toast.er{border-color:var(--red);color:var(--red);}
+.req-empty{border-color:var(--red)!important;animation:shake .4s;}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
-/* ── Print: only receipt ── */
 @media print{
   body>*{display:none!important;}
-  .receipt-overlay{display:flex!important;position:static!important;background:none!important;padding:0!important;}
-  .receipt-wrap{box-shadow:none!important;max-width:100%!important;}
-  .receipt-actions{display:none!important;}
+  .r-overlay{display:flex!important;position:static!important;background:none!important;padding:0!important;}
+  .r-wrap{box-shadow:none!important;max-width:100%!important;}
+  .r-actions{display:none!important;}
   @page{size:80mm auto;margin:4mm;}
 }
-
 @media(max-width:500px){
-  .items-header,.item-row{grid-template-columns:1.6fr 36px 36px 44px 46px 60px 24px;font-size:11px;padding:7px 6px;}
-  .patient-grid{grid-template-columns:1fr;}
-  .manual-grid{grid-template-columns:1fr 1fr 1fr;}
-  .manual-grid input:first-child{grid-column:1/-1;}
-  .r-patient-strip{grid-template-columns:1fr;}
-  .r-info-strip{grid-template-columns:1fr 1fr;}
+  .items-head,.item-row{grid-template-columns:1.6fr 38px 38px 50px 50px 62px 24px;font-size:11px;padding:7px 6px;}
+  .pt-grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
 <body>
-<div class="container">
+<div class="wrap">
 
-<!-- ── HEADER ── -->
-<div class="header">
+<!-- HEADER -->
+<div class="hdr">
   <div class="store-name">Sahyog Medical Store</div>
-  <div class="store-tagline">Licensed Retail Pharmacy</div>
-  <div class="store-addr" id="storeAddr">Khargone, Madhya Pradesh — Ph: 07282-XXXXXX</div>
+  <div class="store-sub">Licensed Retail Pharmacy</div>
+  <div class="store-addr">Manasa, Madhya Pradesh - 458110 | Ph: 7415543744</div>
   <div class="bill-meta">
-    <span id="dateDisplay">—</span>
-    <span class="bill-no" id="billNo">BILL #—</span>
-    <span id="timeDisplay">—</span>
+    <span id="dDate">—</span>
+    <span class="bill-no" id="dBillNo">—</span>
+    <span id="dTime">—</span>
   </div>
 </div>
 
-<!-- ── STATUS ── -->
-<div class="status-bar">
-  <div class="status-dot" id="statusDot"></div>
-  <div class="status-text" id="statusText">Ready. Press 🎤 to start voice billing.</div>
+<!-- STATUS -->
+<div class="status">
+  <div class="dot" id="dot"></div>
+  <div class="stxt" id="stxt">Ready. Press 🎤 to start billing.</div>
 </div>
 
-<!-- ── MIC ── -->
-<div class="mic-section">
-  <button class="mic-btn" id="micBtn" onclick="toggleListening()">
-    <div class="mic-ripple"></div>
+<!-- MIC -->
+<div class="mic-wrap">
+  <button class="mic" id="micBtn" onclick="toggleMic()">
+    <div class="ripple"></div>
     <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 19.93A9 9 0 0 1 3.06 13H5.1a7 7 0 0 0 13.8 0h2.04A9 9 0 0 1 13 20.93V23h-2v-2.07z"/></svg>
-    <span class="mic-label" id="micLabel">START</span>
+    <span class="mlbl" id="mlbl">START</span>
   </button>
 </div>
 
-<!-- ── ASK BANNER ── -->
+<!-- SPELLING BANNER -->
+<div class="spell-banner" id="spellBanner">
+  <div class="spell-title">🔤 Medicine naam spell karo</div>
+  <div class="spell-display" id="spellDisplay"><span class="spell-cursor"></span></div>
+  <div class="spell-hint">
+    Har letter alag bolo &nbsp;·&nbsp; <span class="cmd">space</span> = gap &nbsp;·&nbsp; <span class="cmd">delete</span> = last hata &nbsp;·&nbsp; <span class="cmd">clear</span> = sab hata<br>
+    Numbers: <span class="cmd">six five zero</span> → 650 &nbsp;·&nbsp; NATO: <span class="cmd">alpha mike lima</span> → AML<br>
+    Khatam hone pe: <span class="cmd">done</span> bolo ya button dabao
+  </div>
+  <button class="spell-done-btn" onclick="spellDone()">✓ Done — Naam Confirm Karo</button>
+</div>
+
+<!-- ASK BANNER -->
 <div class="ask-banner" id="askBanner">
-  <div class="ask-icon">🎙️</div>
-  <div class="ask-body">
-    <div class="ask-q" id="askQuestion">—</div>
-    <div class="ask-sub" id="askHint" style="color:var(--amber);font-size:11px;margin-top:2px"></div>
-    <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">Mic se bolo — ya neeche type karo</div>
-    <div class="ask-input-row">
-      <input class="ask-txt" id="askInput" placeholder="Type karo..." 
-        inputmode="decimal"
-        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        onkeydown="if(event.key==='Enter') submitAskInput()">
-      <button class="ask-ok" onclick="submitAskInput()">OK ✓</button>
+  <div class="ask-q" id="askQ">—</div>
+  <div class="ask-hint-txt" id="askHintTxt"></div>
+  <div id="typeBtns" class="type-btns" style="display:none">
+    <button class="type-btn" onclick="selectType('strip')">💊 Strip</button>
+    <button class="type-btn" onclick="selectType('syrup')">🧴 Syrup</button>
+    <button class="type-btn" onclick="selectType('tablet')">🔹 Loose Tab</button>
+  </div>
+  <div id="numRow" class="ask-row" style="display:none">
+    <input class="ask-input" id="askInput" type="number" min="0" inputmode="decimal"
+      autocomplete="off" autocorrect="off" spellcheck="false"
+      onkeydown="if(event.key==='Enter')submitNum()">
+    <button class="ask-ok" onclick="submitNum()">OK ✓</button>
+  </div>
+</div>
+
+<!-- PATIENT CARD -->
+<div class="pt-card">
+  <div class="pt-title">👤 Patient Details</div>
+  <div class="pt-grid">
+    <div class="fwrap" style="grid-column:1/-1">
+      <div class="flbl">Patient Name <span class="req-star">*</span></div>
+      <input class="finput" id="fPatient" placeholder="Patient ka naam..."
+        oninput="this.classList.toggle('filled',this.value.trim().length>0)">
+    </div>
+    <div class="fwrap">
+      <div class="flbl">Doctor (Optional)</div>
+      <input class="finput" id="fDoctor" placeholder="Dr. naam..."
+        oninput="this.classList.toggle('filled',this.value.trim().length>0)">
+    </div>
+    <div class="fwrap">
+      <div class="flbl">Mobile (Optional)</div>
+      <input class="finput" id="fMobile" placeholder="Mobile..." type="tel"
+        oninput="this.classList.toggle('filled',this.value.trim().length>0)">
     </div>
   </div>
 </div>
 
-<!-- ── PATIENT / DOCTOR CARD ── -->
-<div class="patient-card">
-  <div class="card-title">👤 Patient &amp; Prescription Details</div>
-  <div class="patient-grid">
-
-    <div class="field-wrap">
-      <div class="field-label">Patient Name</div>
-      <div class="field-row">
-        <input class="field-input" id="f_patient" placeholder="Patient ka naam..." oninput="this.classList.toggle('filled',this.value.trim().length>0)">
-        <button class="voice-field-btn" onclick="voiceFieldCapture('patient')" id="vbtn_patient" title="Mic se bolo">
-          <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 19.93A9 9 0 0 1 3.06 13H5.1a7 7 0 0 0 13.8 0h2.04A9 9 0 0 1 13 20.93V23h-2v-2.07z"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <div class="field-wrap">
-      <div class="field-label">Doctor Name</div>
-      <div class="field-row">
-        <input class="field-input" id="f_doctor" placeholder="Dr. naam..." oninput="this.classList.toggle('filled',this.value.trim().length>0)">
-        <button class="voice-field-btn" onclick="voiceFieldCapture('doctor')" id="vbtn_doctor" title="Mic se bolo">
-          <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 19.93A9 9 0 0 1 3.06 13H5.1a7 7 0 0 0 13.8 0h2.04A9 9 0 0 1 13 20.93V23h-2v-2.07z"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <div class="field-wrap">
-      <div class="field-label">Mobile (Optional)</div>
-      <div class="field-row">
-        <input class="field-input" id="f_mobile" placeholder="Patient mobile..." type="tel" oninput="this.classList.toggle('filled',this.value.trim().length>0)">
-      </div>
-    </div>
-
-    <div class="field-wrap full">
-      <div class="field-label">Address (Optional)</div>
-      <div class="field-row">
-        <input class="field-input" id="f_address" placeholder="Patient address..." oninput="this.classList.toggle('filled',this.value.trim().length>0)">
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ── MEDICINE DB STATUS ── -->
-<div id="dbStatus" style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:4px;margin-bottom:8px">
-  📋 Medicine DB: <span id="dbStatusText">Not loaded — add MEDICINE_DB_URL in CONFIG</span>
-</div>
-
-<!-- ── VOICE HELP ── -->
-<div class="help-strip">
-  <strong>Medicine bolne ka tarika:</strong>
-  <span class="cmd">"Dolo"</span> → list aayegi → <span class="cmd">"1" / "2" / "3"</span> bolo<br>
-  <strong>Patient / Doctor:</strong>
-  <span class="cmd">"patient Ramesh Kumar"</span>
-  <span class="cmd">"doctor Sharma"</span><br>
-  <strong>Controls:</strong>
-  <span class="cmd">"last hata"</span>
+<!-- HELP -->
+<div class="help">
+  <strong>Medicine add karo:</strong> 🎤 press → naam spell karo → type → qty → price<br>
+  <strong>Patient:</strong> <span class="cmd">"patient Ramesh Kumar"</span>
+  <span class="cmd">"doctor Sharma"</span>
+  <strong>Controls:</strong> <span class="cmd">"last hata"</span>
   <span class="cmd">"clear"</span>
   <span class="cmd">"bill complete"</span>
 </div>
 
-<!-- ── MEDICINE MATCH PANEL ── -->
-<div id="matchPanel" style="display:none;background:var(--surface);border:1px solid rgba(34,197,94,0.4);border-radius:var(--radius);padding:12px;margin-bottom:12px">
-  <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:8px">🔍 <span id="matchQuery"></span> — <strong style="color:var(--accent)">Kaun sa? Number bolo ya naam dobara bolo</strong></div>
-  <div id="matchList" style="display:flex;flex-direction:column;gap:6px"></div>
-  <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:8px">"cancel" bolo ya kuch aur bolne ke liye mic use karo</div>
-</div>
-
-<!-- ── MANUAL ENTRY ── -->
-<div class="manual-toggle">
-  <span class="manual-link" onclick="toggleManual()">✏ Manual medicine entry</span>
-</div>
-<div class="manual-form" id="manualForm">
-  <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:var(--mono)">Manual Item Entry</div>
-  <div class="manual-grid">
-    <input class="manual-input" id="m_name" placeholder="Medicine name">
-    <input class="manual-input" id="m_strip" placeholder="Strips" type="number" min="0" value="0">
-    <input class="manual-input" id="m_tablet" placeholder="Loose tabs" type="number" min="0" value="0">
-    <input class="manual-input" id="m_tabsps" placeholder="Tabs/Strip" type="number" min="1">
-    <input class="manual-input" id="m_mrp" placeholder="MRP/strip ₹" type="number" min="0">
-  </div>
-  <button class="btn btn-ghost" style="width:100%;font-size:12px;padding:8px" onclick="addManualItem()">+ Add Item</button>
-</div>
-
-<!-- ── ITEMS TABLE ── -->
-<div class="items-section">
-  <div class="items-header">
+<!-- ITEMS TABLE -->
+<div class="items-wrap">
+  <div class="items-head">
     <span>Medicine</span>
     <span style="text-align:center">Strip</span>
     <span style="text-align:center">Tab</span>
@@ -345,757 +271,364 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <span style="text-align:right">Total</span>
     <span></span>
   </div>
-  <div class="items-list" id="itemsList">
-    <div class="empty-state">
-      <div class="empty-icon">💊</div>
-      <div>No items. Start voice billing or use manual entry.</div>
-    </div>
+  <div class="items-body" id="itemsBody">
+    <div class="empty">💊 No items yet. Press 🎤 to add medicine.</div>
   </div>
 </div>
 
-<!-- ── TOTALS ── -->
-<div class="totals-block" id="totalsBlock" style="display:none">
-  <div class="item-count-badge" id="itemCount">0 items</div>
-  <div class="totals-row sub"><span>Sub Total</span><span id="rawTotal">₹0.00</span></div>
-  <div class="totals-row discount-row">
-    <span>Discount</span>
+<!-- TOTALS -->
+<div class="totals-block" id="totalsBlock">
+  <div class="tcnt" id="tCount">0 items</div>
+  <div class="trow sub"><span>Sub Total</span><span id="tSub">₹0.00</span></div>
+  <div class="disc-row">
+    <span style="font-family:var(--mono);font-size:13px;color:var(--text3)">Discount</span>
     <span style="display:flex;align-items:center;gap:6px">
-      <input id="discountInput" type="number" min="0" value="0" step="1"
-        style="width:64px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-family:var(--mono);font-size:12px;text-align:right;outline:none"
-        oninput="renderItems()">
-      <button id="discTypeBtn" onclick="toggleDiscType()"
-        style="background:var(--accent-dim);border:1px solid rgba(34,197,94,0.4);color:var(--accent);border-radius:4px;padding:3px 8px;font-family:var(--mono);font-size:12px;cursor:pointer;font-weight:600;min-width:28px">%</button>
-      <span id="discountAmt" style="min-width:52px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--red)">-₹0.00</span>
+      <input class="disc-input" id="discVal" type="number" min="0" value="0" oninput="renderItems()">
+      <button class="disc-toggle" id="discToggle" onclick="toggleDisc()">%</button>
+      <span id="discAmt" style="font-family:var(--mono);font-size:12px;color:var(--red);min-width:54px;text-align:right">-₹0.00</span>
     </span>
   </div>
-  <div class="totals-row roundoff"><span>Round Off</span><span id="roundOff">+₹0.00</span></div>
-  <div class="totals-row final"><span>TOTAL</span><span class="val" id="totalAmount">₹0</span></div>
+  <div class="trow roff"><span>Round Off</span><span id="tRoff">+₹0.00</span></div>
+  <div class="trow final"><span>TOTAL</span><span class="tv" id="tTotal">₹0</span></div>
 </div>
 
-<!-- ── ACTIONS ── -->
+<!-- ACTIONS -->
 <div class="actions">
-  <button class="btn btn-primary" id="printBtn" onclick="showReceipt()" disabled>🖨 Generate Bill</button>
-  <button class="btn btn-ghost" onclick="clearBill()">🗑 Clear All</button>
+  <button class="btn btn-p" id="printBtn" onclick="showReceipt()" disabled>🖨 Generate Bill</button>
+  <button class="btn btn-g" onclick="clearBill()">🗑 Clear All</button>
+</div>
+<div class="sheets-st" id="sheetsStatus"></div>
+
 </div>
 
-<div class="sheets-status" id="sheetsStatus">Google Sheets: configure GOOGLE_SHEET_SCRIPT_URL in CONFIG</div>
-
-</div><!-- /container -->
-
-<!-- ══════════════════════════════════════════════
-     THERMAL RECEIPT
-══════════════════════════════════════════════ -->
-<div class="receipt-overlay" id="receiptOverlay">
-  <div class="receipt-wrap">
-
-    <div class="r-body" id="receiptContent"><!-- filled by JS --></div>
-    <div class="receipt-actions">
-      <button class="r-btn r-btn-green" onclick="printBluetooth()">🖨 BT Print</button>
-      <button class="r-btn r-btn-green" onclick="window.print()">🖨 Print</button>
-      <button class="r-btn r-btn-gray" onclick="closeReceipt()">✕ Close</button>
+<!-- RECEIPT OVERLAY -->
+<div class="r-overlay" id="rOverlay">
+  <div class="r-wrap">
+    <div class="rb" id="rContent"></div>
+    <div class="r-actions">
+      <button class="rb-g" onclick="btPrint()">🖨 BT Print</button>
+      <button class="rb-g" onclick="window.print()">🖨 Print</button>
+      <button class="rb-g rb-gr" onclick="closeReceipt()">✕ Close</button>
     </div>
-
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
-<!-- ══════════════════════════════════════════════
-     CONFIG — edit these values
-══════════════════════════════════════════════ -->
 <script>
-const CONFIG = {
-  GROQ_API_KEY:            "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",  // console.groq.com → free
-  GOOGLE_SHEET_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyCa_siNUXJbP6hCcoUcxUOj8cq54OjFl2GrOeZG2G3gMRMOphiyqe2BxLTiIbTE7uB/exec",
-  BILL_PREFIX:             "SAHYOG",
-
-  // Medicine list — Google Sheets published as CSV
-  // File → Share → Publish to web → CSV → paste URL here
-  MEDICINE_DB_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOC4o0_IHDqIl8VYD0LG7xKhEKNMMKUO5tUPCCkhHTJhw8HDWJl4Z5k3cwXgHfxBPwXI84kL3eg7TQ/pub?gid=0&single=true&output=csv",
-
-  // Store details (shown on bill)
-  STORE_NAME:    "Sahyog Medical Store",
-  STORE_ADDR:    "Manasa, Madhya Pradesh - 458110",
-  STORE_PHONE:   "7415543744",
-  STORE_EMAIL:   "",
-  STORE_GSTIN:   "23BUQPS8562N1ZL",
-  STORE_DL1:     "",
-  STORE_DL2:     "",
+// ══════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════
+const CFG = {
+  BILL_PREFIX:  'SAHYOG',
+  STORE_NAME:   'Sahyog Medical Store',
+  STORE_ADDR:   'Manasa, Madhya Pradesh - 458110',
+  STORE_PHONE:  '7415543744',
+  STORE_GSTIN:  '23BUQPS8562N1ZL',
+  SHEETS_URL:   'https://script.google.com/macros/s/AKfycbyCa_siNUXJbP6hCcoUcxUOj8cq54OjFl2GrOeZG2G3gMRMOphiyqe2BxLTiIbTE7uB/exec',
 };
 
-// ═══════════════════════════════════════════════════
-//  VOICE CORRECTIONS DICTIONARY
-// ═══════════════════════════════════════════════════
-const VOICE_CORRECTIONS = {
-  // ── NUMBER WORDS (Hindi + English) ──
-  "ek":"1","do":"2","teen":"3","char":"4","paanch":"5",
-  "chhe":"6","saat":"7","aath":"8","nau":"9","das":"10",
-  "gyarah":"11","barah":"12","terah":"13","chaudah":"14","pandrah":"15",
-  "solah":"16","satrah":"17","atharah":"18","unees":"19","bees":"20",
-  "pachees":"25","tees":"30","chalees":"40","pachaas":"50",
-  "saath":"70","assi":"80","nabbe":"90","sau":"100",
-
-  // ── COMPOUND NUMBERS ──
-  "six fifty":"650","five hundred":"500","two fifty":"250",
-  "seven fifty":"750","one fifty":"150","seventy five":"75",
-  "two hundred fifty":"250","one thousand":"1000","five fifty":"550",
-  "three fifty":"350","four fifty":"450","eight fifty":"850",
-  "sixty five":"65","forty five":"45","thirty five":"35",
-  "twenty five":"25","twenty two":"22",
-
-  // ── MEDICINE NAMES — how en-US hears them ──
-  // Dolo / Paracetamol
-  "dolo six fifty":"Dolo 650","dolo 6 50":"Dolo 650","polo 650":"Dolo 650",
-  "dollar 650":"Dolo 650","dolo":"Dolo","polo":"Dolo",
-  "paracetamol":"Paracetamol","para":"Paracetamol",
-  "pcm":"Paracetamol","p c m":"Paracetamol","pci":"Paracetamol",
-
-  // Crocin
-  "crocin":"Crocin","crosin":"Crocin","krosheen":"Crocin",
-  "croc in":"Crocin","corosin":"Crocin",
-
-  // Combiflam / Ibuprofen
-  "combiflam":"Combiflam","combi flame":"Combiflam","combine flame":"Combiflam",
-  "combifleam":"Combiflam","combi flam":"Combiflam",
-  "ibuprofen":"Ibuprofen","ibuprofin":"Ibuprofen","ibupro":"Ibuprofen",
-  "brufen":"Ibuprofen","brufin":"Ibuprofen",
-
-  // Azithromycin
-  "azithromycin":"Azithromycin","azee":"Azithromycin","azimax":"Azithromycin",
-  "azithro":"Azithromycin","a zi":"Azithromycin","as he threw me sin":"Azithromycin",
-  "azithro mycin":"Azithromycin","zithromax":"Azithromycin",
-
-  // Amoxicillin / Augmentin
-  "amoxicillin":"Amoxicillin","amoxy":"Amoxicillin","amoxil":"Amoxicillin",
-  "amox":"Amoxicillin","a moxie":"Amoxicillin",
-  "augmentin":"Augmentin","ogmentin":"Augmentin","aug":"Augmentin",
-
-  // Pantoprazole / Omeprazole
-  "pantoprazole":"Pantoprazole","pan 40":"Pantoprazole 40",
-  "pantofast":"Pantoprazole","panto":"Pantoprazole",
-  "pan d":"Pan-D","pantop":"Pantoprazole",
-  "omeprazole":"Omeprazole","omez":"Omeprazole","omi":"Omeprazole",
-  "omee":"Omeprazole",
-
-  // Ranitidine / Antacids
-  "ranitidine":"Ranitidine","rantac":"Ranitidine","ranta":"Ranitidine",
-  "gelusil":"Gelusil","gelucil":"Gelusil","digene":"Digene",
-  "antacid":"Antacid","an acid":"Antacid",
-
-  // Cetirizine / Allergy
-  "cetirizine":"Cetirizine","cetrizine":"Cetirizine","cetzine":"Cetirizine",
-  "situating":"Cetirizine","sitter is in":"Cetirizine","setrizine":"Cetirizine",
-  "fexofenadine":"Fexofenadine","allegra":"Allegra","aloe gruff":"Allegra",
-  "montair":"Montair","montek":"Montelukast","montelukast":"Montelukast",
-  "montek lc":"Montelukast LC",
-
-  // Metformin / Diabetes
-  "metformin":"Metformin","metform":"Metformin","met form in":"Metformin",
-  "glycomet":"Glycomet","gluco met":"Glycomet",
-  "glipizide":"Glipizide","glimpiride":"Glimepiride","glimepiride":"Glimepiride",
-
-  // ── Atorvastatin / Cholesterol ──
-  "atorvastatin":"Atorvastatin","atorva":"Atorvastatin","ato":"Atorvastatin",
-  "etawah":"Atorvastatin","atawa":"Atorvastatin","at all":"Atorvastatin",
-  "a torva":"Atorvastatin","torva":"Atorvastatin","atarva":"Atorvastatin",
-  "lipitor":"Atorvastatin","storvas":"Storvas","rosuvas":"Rosuvas",
-  "rosuvastatin":"Rosuvastatin","rosuva":"Rosuvastatin",
-
-  // ── ASP / Aspirin mishearings ──
-  "asp 75":"Aspirin 75","asp75":"Aspirin 75","asp":"Aspirin",
-  "ecosprin":"Ecosprin","eco sprint":"Ecosprin","echo sprint":"Ecosprin",
-  "ecosp":"Ecosprin","ecospleen":"Ecosprin",
-
-  // ── Dolo mishearings ──
-  "polo":"Dolo","pollo":"Dolo","dollo":"Dolo","dolly":"Dolo","dollar":"Dolo",
-  "dole":"Dolo","dolo six fifty":"Dolo 650","polo 650":"Dolo 650",
-  "dollar 650":"Dolo 650","polo six fifty":"Dolo 650",
-
-  // ── Crocin mishearings ──
-  "crow scene":"Crocin","crow sin":"Crocin","causing":"Crocin",
-  "pro scene":"Crocin","crossing":"Crocin","krosin":"Crocin",
-
-  // ── Azithromycin mishearings ──
-  "as a throw me sin":"Azithromycin","as he threw me sin":"Azithromycin",
-  "azithro mycin":"Azithromycin","a theorem a sin":"Azithromycin",
-  "azithro":"Azithromycin","as if ro":"Azithromycin",
-
-  // ── Amoxicillin mishearings ──
-  "a moxy":"Amoxicillin","a mock sea":"Amoxicillin","emotion":"Amoxicillin",
-  "a mosque":"Amoxicillin","ammox":"Amoxicillin",
-
-  // ── Pantoprazole mishearings ──
-  "panto prose all":"Pantoprazole","panto":"Pantoprazole",
-  "pants a prose all":"Pantoprazole","pan d":"Pan-D",
-  "panto 40":"Pantoprazole 40","pan 40":"Pantoprazole 40",
-
-  // ── Cetirizine mishearings ──
-  "set arising":"Cetirizine","situating":"Cetirizine","setting":"Cetirizine",
-  "sitter":"Cetirizine","set rising":"Cetirizine","set reason":"Cetirizine",
-  "city rising":"Cetirizine","citizenry":"Cetirizine",
-
-  // ── Metformin mishearings ──
-  "met phone":"Metformin","met foreign":"Metformin","net form in":"Metformin",
-  "met form":"Metformin",
-
-  // ── Amlodipine mishearings ──
-  // ── Amlodipine / Amlovas mishearings ──
-  "amlodipine":"Amlodipine","amlo":"Amlovas","amlovas":"Amlovas",
-  "ahmedabad":"Amlovas","am loved":"Amlovas","am low":"Amlovas",
-  "am lo vas":"Amlovas","emlova":"Amlovas","amlo vas":"Amlovas",
-  "am loading":"Amlovas","amlo d":"Amlodipine 5",
-
-  // ── Combiflam mishearings ──
-  "come be flame":"Combiflam","can be flame":"Combiflam",
-  "combined flame":"Combiflam","combo flame":"Combiflam",
-
-  // ── Levofloxacin mishearings ──
-  "level flocks a sin":"Levofloxacin","level":null,"levoflo":"Levofloxacin",
-  "leave of luck":"Levofloxacin","levo flocks":"Levofloxacin",
-
-  // ── Omeprazole mishearings ──
-  "oh my prose all":"Omeprazole","omi prose":"Omeprazole",
-  "home a prose all":"Omeprazole",
-
-  // ── Benadryl mishearings ──
-  "been a drill":"Benadryl","benny drill":"Benadryl","venetian":"Benadryl",
-
-  // ── Becosules mishearings ──
-  "be co souls":"Becosules","because souls":"Becosules","be coals":"Becosules",
-  "become souls":"Becosules",
-
-  // ── Montelukast mishearings ──
-  "monday cast":"Montelukast","monthly cast":"Montelukast",
-  "montelucas":"Montelukast","monthly cost":"Montelukast",
-
-  // ── Ranitidine mishearings ──
-  "run a team":"Ranitidine","run at a dean":"Ranitidine",
-  "rani":"Ranitidine",
-
-  // ── Telmisartan mishearings ──
-  "tell me start":"Telmisartan","tell me certain":"Telmisartan",
-  "tell me satin":"Telmisartan",
-
-  // ── Glycomet mishearings ──
-  "glyco met":"Glycomet","glyco":"Glycomet","gluco":"Glucomet",
-
-  // ── Vitamin mishearings ──
-  "vitamin sea":"Vitamin C","vitamin bee":"Vitamin B","vitamin dee":"Vitamin D",
-
-  // Antibiotics
-  "levofloxacin":"Levofloxacin","levoflox":"Levofloxacin","levo":"Levofloxacin",
-  "ciprofloxacin":"Ciprofloxacin","cipro":"Ciprofloxacin","cifran":"Cifran",
-  "metronidazole":"Metronidazole","metro":"Metronidazole","flagyl":"Flagyl",
-  "doxycycline":"Doxycycline","doxy":"Doxycycline",
-  "cloxacillin":"Cloxacillin","clox":"Cloxacillin",
-
-  // Vitamins / Supplements
-  "vitamin c":"Vitamin C","vitamin d":"Vitamin D","vitamin d3":"Vitamin D3",
-  "vitamin b12":"Vitamin B12","vitamin b complex":"Vitamin B Complex",
-  "vitamin e":"Vitamin E","multivitamin":"Multivitamin",
-  "calcium":"Calcium","cal":"Calcium","shelcal":"Shelcal",
-  "becosules":"Becosules","beco suels":"Becosules","beco souls":"Becosules",
-
-  // BP / Heart
-  "telmisartan":"Telmisartan","telma":"Telma","telmikind":"Telmikind",
-  "aspirin":"Aspirin","ecosprin":"Ecosprin","eco sprint":"Ecosprin",
-  "clopidogrel":"Clopidogrel","clopilet":"Clopilet",
-
-  // Syrups / common
-  "benadryl":"Benadryl","bene drill":"Benadryl","bee and drill":"Benadryl",
-  "grilinctus":"Grilinctus","grilli incutus":"Grilinctus",
-  "ascoril":"Ascoril","ask or ill":"Ascoril",
-  "alex":"Alex","alexa":"Alex",
-  "phensedyl":"Phensedyl","fen sedyl":"Phensedyl",
-
-  // Units / billing words
-  "strip":"strip","strips":"strip","estreep":"strip","strip s":"strip",
-  "tablet":"tablet","tablets":"tablet","tab":"tablet","tabs":"tablet",
-  "syrup":"syrup","sirup":"syrup","bottle":"bottle","bottles":"bottle",
-  "rupees":"","rupee":"","rs":"","rs.":"","price":"",
+// ══════════════════════════════════════════
+//  SPELL MAP
+// ══════════════════════════════════════════
+const SM = {
+  // Single letters
+  a:'A',b:'B',c:'C',d:'D',e:'E',f:'F',g:'G',h:'H',i:'I',j:'J',
+  k:'K',l:'L',m:'M',n:'N',o:'O',p:'P',q:'Q',r:'R',s:'S',t:'T',
+  u:'U',v:'V',w:'W',x:'X',y:'Y',z:'Z',
+  // NATO phonetic alphabet
+  alpha:'A',bravo:'B',charlie:'C',delta:'D',echo:'E',foxtrot:'F',
+  golf:'G',hotel:'H',india:'I',juliet:'J',kilo:'K',lima:'L',
+  mike:'M',november:'N',oscar:'O',papa:'P',quebec:'Q',romeo:'R',
+  sierra:'S',tango:'T',uniform:'U',victor:'V',whiskey:'W',
+  xray:'X','x-ray':'X',yankee:'Y',zulu:'Z',
+  // Digits (word form)
+  zero:'0',one:'1',two:'2',three:'3',four:'4',
+  five:'5',six:'6',seven:'7',eight:'8',nine:'9',
+  // Hindi digits
+  ek:'1',do:'2',teen:'3',char:'4',paanch:'5',
+  chhe:'6',saat:'7',aath:'8',nau:'9',
+  // Direct digit chars
+  '0':'0','1':'1','2':'2','3':'3','4':'4',
+  '5':'5','6':'6','7':'7','8':'8','9':'9',
+  // Special characters
+  space:' ',gap:' ',dash:'-',hyphen:'-',dot:'.',point:'.',slash:'/',plus:'+',
+  // Control words
+  done:'__DONE__',finish:'__DONE__',complete:'__DONE__',
+  'ho gaya':'__DONE__','naam done':'__DONE__',ok:'__DONE__',
+  delete:'__DEL__',backspace:'__DEL__',hata:'__DEL__',mita:'__DEL__',
+  clear:'__CLR__',reset:'__CLR__','sab hata':'__CLR__',
 };
 
-// ── APPLY CORRECTIONS ──
-function applyCorrections(text) {
-  let r = text.toLowerCase().trim();
-
-  // 1. Spoken digit words → numerals
-  const numMap = {
-    'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5',
-    'six':'6','seven':'7','eight':'8','nine':'9','ten':'10',
-    'eleven':'11','twelve':'12','thirteen':'13','fourteen':'14','fifteen':'15',
-    'sixteen':'16','seventeen':'17','eighteen':'18','nineteen':'19','twenty':'20',
-    'thirty':'30','forty':'40','fifty':'50','sixty':'60','seventy':'70',
-    'eighty':'80','ninety':'90','hundred':'100',
-  };
-  Object.entries(numMap).forEach(([w,n]) =>
-    r = r.replace(new RegExp('\\b' + w + '\\b', 'gi'), n)
-  );
-
-  // 2. Multi-word corrections — longest match first
-  const sorted = Object.entries(VOICE_CORRECTIONS)
-    .filter(([k,v]) => v !== null && v !== undefined)
-    .sort((a,b) => b[0].length - a[0].length);
-  for (const [wrong, right] of sorted) {
-    if (!wrong) continue;
-    const escaped = wrong.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    r = r.replace(new RegExp('\\b' + escaped + '\\b', 'gi'), right || '');
-  }
-
-  // 3. Clean trailing/double spaces
-  r = r.replace(/\s+/g, ' ').trim();
-  return r;
-}
-
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════
 //  STATE
-// ═══════════════════════════════════════════════════
-let items = [];
-let billCounter = parseInt(localStorage.getItem('sms_bill_counter') || '1');
-let isListening = false;
-let recognition = null;
-let pendingItem = null;
-let pendingField = null;
-let fieldMicActive = false;
-let fieldMicTarget = null;
-let fieldMicRec = null;
-let btDevice = null;
+// ══════════════════════════════════════════
+let items     = [];
+let billCtr   = parseInt(localStorage.getItem('sms_ctr') || '1');
+let listening = false;
+let recog     = null;
+let discMode  = 'pct';  // 'pct' or 'amt'
+let _voice    = null;
 
-// Medicine DB
-let medicineDB = [];          // [{name}] — loaded from Google Sheets CSV
-let matchCandidates = [];     // current search results shown to user
-let awaitingMatchSelect = false;
+// Wizard
+let wiz     = null;  // {name, _type, qty, price, tabs_per_strip}
+let wizStep = null;  // 'spell'|'type'|'qty'|'price'|'tabs'
+let spellBuf = '';
 
-// ═══════════════════════════════════════════════════
-//  MEDICINE DB — load from Google Sheets CSV
-// ═══════════════════════════════════════════════════
-async function loadMedicineDB() {
-  const url = CONFIG.MEDICINE_DB_URL;
-  const el = document.getElementById('dbStatusText');
-  if (!url || url.startsWith('YOUR_')) {
-    el.textContent = 'Not loaded — add MEDICINE_DB_URL in CONFIG';
-    el.style.color = 'var(--amber)';
-    return;
-  }
-  try {
-    el.textContent = 'Loading...';
-    const res = await fetch(url);
-    const csv = await res.text();
-    medicineDB = parseCSV(csv);
-    el.textContent = `✓ ${medicineDB.length} medicines loaded`;
-    el.style.color = 'var(--accent)';
-  } catch(e) {
-    el.textContent = '✕ Load failed — check URL and sharing settings';
-    el.style.color = 'var(--red)';
-  }
-}
-
-function parseCSV(csv) {
-  const lines = csv.trim().split('\n').filter(l => l.trim());
-  if (lines.length < 2) return [];
-  // First line = header, find name column (or just use col 0)
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
-  const nameIdx = Math.max(0, headers.findIndex(h =>
-    h.includes('name') || h.includes('medicine') || h.includes('naam')
-  ));
-  return lines.slice(1).map(line => {
-    const cols = line.split(',').map(c => c.trim().replace(/"/g,''));
-    const name = cols[nameIdx] || '';
-    if (!name) return null;
-    return { name };
-  }).filter(Boolean);
-}
-
-// ─── FUZZY SEARCH ───────────────────────────────────
-function fuzzySearch(query, limit = 4) {
-  if (!query || medicineDB.length === 0) return [];
-  const q = query.toLowerCase().trim();
-  const words = q.split(/\s+/).filter(w => w.length > 1);
-  if (!q) return [];
-
-  const scored = medicineDB.map(med => {
-    const n = med.name.toLowerCase();
-    let score = 0;
-
-    if (n === q)                        score += 200; // exact
-    if (n.startsWith(q))               score += 120; // starts with full query
-    if (n.includes(q))                 score += 80;  // contains full query
-    if (words.every(w => n.includes(w))) score += 60; // all words present
-    words.forEach(w => {
-      if (n.startsWith(w))             score += 40;
-      else if (n.includes(w))          score += 20;
-    });
-    // Partial first-word match (handles "amlo" matching "amlovas")
-    const nWords = n.split(/\s+/);
-    words.forEach(qw => {
-      nWords.forEach(nw => {
-        if (nw.startsWith(qw) || qw.startsWith(nw)) score += 35;
-      });
-    });
-    // Character overlap bonus
-    let overlap = 0;
-    for (const ch of q) { if (n.includes(ch)) overlap++; }
-    score += Math.floor(overlap * 0.5);
-
-    return { med, score };
-  })
-  .filter(x => x.score > 15)
-  .sort((a, b) => b.score - a.score)
-  .slice(0, limit)
-  .map(x => x.med);
-
-  return scored;
-}
-
-// ─── SHOW MATCH PANEL ───────────────────────────────
-function showMatchPanel(query, matches) {
-  matchCandidates = matches;
-  awaitingMatchSelect = true;
-  document.getElementById('matchQuery').textContent = '"' + query + '"';
-  const list = document.getElementById('matchList');
-  list.innerHTML = matches.map((m, i) => `
-    <div onclick="selectMatch(${i})" style="
-      display:flex;align-items:center;gap:10px;
-      background:var(--card);border:1px solid var(--border);
-      border-radius:6px;padding:9px 12px;cursor:pointer;
-      transition:border-color 0.15s;
-    " onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-      <span style="background:var(--accent);color:#0a0f0a;border-radius:4px;
-        width:22px;height:22px;display:flex;align-items:center;justify-content:center;
-        font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0">${i+1}</span>
-      <span style="font-weight:600;color:var(--text);font-size:13px">${m.name}</span>
-      <span style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-left:auto">${m.type}</span>
-    </div>
-  `).join('');
-  document.getElementById('matchPanel').style.display = 'block';
-  // Speak options
-  const names = matches.map((m,i) => `${i+1}: ${m.name}`).join(', ');
-  speak(matches.length + ' results. ' + names + '. Kaun sa?');
-  setStatus('listening', '🔍 Kaun sa? <strong>1 se ' + matches.length + '</strong> bolo ya naam dobara bolo');
-}
-
-function hideMatchPanel() {
-  document.getElementById('matchPanel').style.display = 'none';
-  matchCandidates = [];
-  awaitingMatchSelect = false;
-}
-
-function selectMatch(idx) {
-  if (idx < 0 || idx >= matchCandidates.length) return;
-  hideMatchPanel();
-  const med = matchCandidates[idx];
-  speak(med.name + ' selected');
-  startWizard({ name: med.name }); // no _type — wizard will ask
-}
-
-// ═══════════════════════════════════════════════════
-//  STORE DETAILS INIT
-// ═══════════════════════════════════════════════════
-function initApp() {
-  const el = document.getElementById('storeAddr');
-  if (el) el.textContent = `${CONFIG.STORE_ADDR} — Ph: ${CONFIG.STORE_PHONE}`;
-  loadMedicineDB();
-}
-
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════
 //  CLOCK
-// ═══════════════════════════════════════════════════
-function updateClock() {
-  const now = new Date();
-  document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'});
-  document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-  document.getElementById('billNo').textContent = `BILL #${CONFIG.BILL_PREFIX}-${String(billCounter).padStart(3,'0')}`;
+// ══════════════════════════════════════════
+function tick() {
+  const n = new Date();
+  document.getElementById('dDate').textContent =
+    n.toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'});
+  document.getElementById('dTime').textContent =
+    n.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('dBillNo').textContent =
+    `${CFG.BILL_PREFIX}-${String(billCtr).padStart(3,'0')}`;
 }
-setInterval(updateClock, 1000); updateClock();
+setInterval(tick, 1000); tick();
 
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════
 //  STATUS / TOAST
-// ═══════════════════════════════════════════════════
-function setStatus(state, msg) {
-  document.getElementById('statusDot').className = 'status-dot' + (state ? ' '+state : '');
-  document.getElementById('statusText').innerHTML = msg;
+// ══════════════════════════════════════════
+function st(cls, msg) {
+  document.getElementById('dot').className = 'dot' + (cls ? ' '+cls : '');
+  document.getElementById('stxt').innerHTML = msg;
 }
-function showToast(msg, type='') {
+function toast(msg, type='') {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show' + (type ? ' '+type : '');
-  setTimeout(() => t.className = 'toast', 2600);
-}
-function markFilled(el) {
-  el.classList.toggle('filled', el.value.trim().length > 0);
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' '+type : '');
+  setTimeout(() => t.className = 'toast', 2400);
 }
 
-// ═══════════════════════════════════════════════════
-//  VOICE — MAIN BILLING MIC
-// ═══════════════════════════════════════════════════
-function toggleListening() {
-  isListening ? stopListening() : startListening();
+// ══════════════════════════════════════════
+//  TTS — best available voice
+// ══════════════════════════════════════════
+function getBestVoice() {
+  if (_voice) return _voice;
+  const voices = speechSynthesis.getVoices();
+  const prefs = [
+    v => v.lang === 'en-IN' && v.name.toLowerCase().includes('female'),
+    v => v.lang === 'en-IN',
+    v => v.lang === 'en-US' && v.name.toLowerCase().includes('female'),
+    v => v.lang === 'en-US',
+    v => v.lang.startsWith('en'),
+  ];
+  for (const fn of prefs) {
+    const f = voices.find(fn);
+    if (f) { _voice = f; return f; }
+  }
+  return null;
 }
-function startListening() {
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => { _voice = null; };
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = getBestVoice(); if (v) u.voice = v;
+  u.lang = 'en-IN'; u.rate = 0.92; u.pitch = 1; u.volume = 1;
+  speechSynthesis.speak(u);
+}
+
+// ══════════════════════════════════════════
+//  STT — mic
+// ══════════════════════════════════════════
+function toggleMic() { listening ? stopMic() : startMic(); }
+
+function startMic() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { setStatus('error', 'Speech Recognition not supported. Use Chrome on Android.'); return; }
-  recognition = new SR();
-  recognition.lang = 'en-US';
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.onstart = () => {
-    isListening = true;
-    document.getElementById('micBtn').classList.add('active');
-    document.getElementById('micLabel').textContent = 'STOP';
-    setStatus('listening', 'Sun raha hoon... bolo medicine ya patient ka naam.');
+  if (!SR) { st('err', 'Speech Recognition not supported — use Chrome on Android'); return; }
+  recog = new SR();
+  recog.lang = 'en-US';
+  recog.continuous = true;
+  recog.interimResults = true;
+
+  recog.onstart = () => {
+    listening = true;
+    document.getElementById('micBtn').classList.add('on');
+    document.getElementById('mlbl').textContent = 'STOP';
+    if (!wiz) st('on', '🎤 Sun raha hoon... medicine ke liye boliye ya mic press karein');
   };
-  recognition.onresult = (e) => {
+
+  recog.onresult = (e) => {
     let interim = '', final = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const t = e.results[i][0].transcript;
       if (e.results[i].isFinal) final += t; else interim += t;
     }
-    if (interim) setStatus('listening', `<span class="transcript-live">"${interim}"</span>`);
-    if (final.trim()) handleVoiceInput(final.trim().toLowerCase());
-  };
-  recognition.onerror = (e) => { if (e.error !== 'no-speech') { setStatus('error', 'Voice error: '+e.error); stopListening(); } };
-  recognition.onend = () => { if (isListening) recognition.start(); };
-  recognition.start();
-}
-function stopListening() {
-  isListening = false;
-  if (recognition) { recognition.stop(); recognition = null; }
-  document.getElementById('micBtn').classList.remove('active');
-  document.getElementById('micLabel').textContent = 'START';
-  setStatus('', 'Stopped. Press 🎤 to listen again.');
-  hideBanner();
-}
-
-// ═══════════════════════════════════════════════════
-//  VOICE — FIELD MIC (patient / doctor name)
-// ═══════════════════════════════════════════════════
-function voiceFieldCapture(fieldKey) {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { showToast('Speech API not supported', 'error'); return; }
-
-  const btn = document.getElementById('vbtn_' + fieldKey);
-  const inputEl = document.getElementById('f_' + fieldKey);
-
-  if (fieldMicActive && fieldMicTarget === fieldKey) {
-    // Stop
-    if (fieldMicRec) fieldMicRec.stop();
-    btn.classList.remove('recording');
-    fieldMicActive = false; fieldMicTarget = null;
-    return;
-  }
-
-  // Stop any other field mic
-  if (fieldMicRec) fieldMicRec.stop();
-  document.querySelectorAll('.voice-field-btn').forEach(b => b.classList.remove('recording'));
-
-  fieldMicActive = true;
-  fieldMicTarget = fieldKey;
-  btn.classList.add('recording');
-
-  fieldMicRec = new SR();
-  fieldMicRec.lang = 'en-IN';
-  fieldMicRec.continuous = false;
-  fieldMicRec.interimResults = true;
-
-  fieldMicRec.onresult = (e) => {
-    let final = '';
-    for (let i = 0; i < e.results.length; i++) {
-      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+    // Show interim
+    if (interim) {
+      if (wizStep === 'spell')
+        st('on', `🔤 <span class="live">"${interim}"</span>`);
+      else
+        st('on', `<span class="live">"${interim}"</span>`);
     }
-    if (final) {
-      const cleaned = toTitleCase(final.trim()
-        .replace(/\bdr\b/gi, 'Dr.')
-        .replace(/\bdoctor\b/gi, 'Dr.')
-      );
-      inputEl.value = cleaned;
-      markFilled(inputEl);
-      showToast(`${fieldKey === 'patient' ? 'Patient' : 'Doctor'}: ${cleaned}`, 'success');
-    }
+    if (final.trim()) handleVoice(final.trim());
   };
-  fieldMicRec.onend = () => {
-    btn.classList.remove('recording');
-    fieldMicActive = false; fieldMicTarget = null;
+
+  recog.onerror = (e) => {
+    if (e.error !== 'no-speech') { st('err', 'Mic error: ' + e.error); stopMic(); }
   };
-  fieldMicRec.onerror = () => { btn.classList.remove('recording'); fieldMicActive = false; };
-  fieldMicRec.start();
-  showToast(`${fieldKey === 'patient' ? 'Patient ka naam' : 'Doctor ka naam'} bolo...`);
+  recog.onend = () => { if (listening) recog.start(); };
+  recog.start();
 }
 
-// ═══════════════════════════════════════════════════
-//  VOICE INPUT ROUTER — Groq handles everything
-// ═══════════════════════════════════════════════════
-function handleVoiceInput(raw) {
-  const text = raw.trim().toLowerCase();
-  if (!text) return;
-  setStatus('listening', `<span class="transcript-live">"${raw.trim()}"</span>`);
+function stopMic() {
+  listening = false;
+  if (recog) { recog.stop(); recog = null; }
+  document.getElementById('micBtn').classList.remove('on');
+  document.getElementById('mlbl').textContent = 'START';
+  st('', 'Stopped.');
+}
 
-  // ── SPECIAL COMMANDS ──
-  if (/bill\s*(complete|done|finish|ho gaya|khatam|puri|banda|bana do)|complete bill/i.test(text)) {
-    hideBanner(); hideMatchPanel();
-    stopListening(); if (items.length > 0) showReceipt(); return;
+// ══════════════════════════════════════════
+//  VOICE ROUTER
+// ══════════════════════════════════════════
+function handleVoice(raw) {
+  const t = raw.trim().toLowerCase();
+
+  // ── Global commands (always active) ──
+  if (/bill\s*(complete|done|finish|khatam|banda|bana|puri)|complete\s*bill/i.test(t)) {
+    stopMic(); if (items.length) showReceipt(); return;
   }
-  if (/^(clear|saaf|reset|hata sab|sab hata)\b|clear\s*(bill|sab|all)/i.test(text)) {
-    hideBanner(); hideMatchPanel(); clearBill(); return;
+  if (/^(clear|saaf|reset)$|clear\s*(bill|sab|all)/i.test(t)) {
+    clearBill(); return;
   }
-  if (/last\s*(hata|nikal|remove|delete|wala hata)|pichla\s*(hata|nikal)|undo/i.test(text)) {
+  if (/last\s*(hata|nikal|remove|delete)|pichla\s*(hata|nikal)|undo/i.test(t)) {
     if (items.length) { const r = items.pop(); renderItems(); speak(r.name + ' removed'); }
     else speak('Koi item nahi hai');
     return;
   }
-  if (/^cancel$|^ruk$|^rukja$/i.test(text)) {
-    hideMatchPanel(); hideBanner();
-    speak('Ok'); setStatus('listening', 'Cancelled.'); return;
+  if (/^(cancel|band karo|ruk|rukja)$/i.test(t)) {
+    cancelWizard(); speak('Cancelled'); return;
   }
 
-  // ── PATIENT ──
-  const pm = text.match(/^patient\s+(.+)/i);
+  // ── Patient name ──
+  const pm = t.match(/^patient\s+(.+)/i);
   if (pm) {
-    const name = toTitleCase(pm[1].replace(/\b(ka naam|name)\b/gi,'').trim());
-    document.getElementById('f_patient').value = name;
-    document.getElementById('f_patient').classList.add('filled');
-    speak('Patient ' + name);
-    setStatus('listening', '✓ Patient: ' + name);
-    return;
+    const name = toTitle(pm[1].replace(/\b(ka naam|name)\b/gi, '').trim());
+    document.getElementById('fPatient').value = name;
+    document.getElementById('fPatient').classList.add('filled');
+    speak('Patient ' + name); st('on', '✓ Patient: ' + name); return;
   }
 
-  // ── DOCTOR ──
-  const dm = text.match(/^doctor\s+(?:dr\.?\s+)?(.+)/i);
+  // ── Doctor name ──
+  const dm = t.match(/^doctor\s+(?:dr\.?\s+)?(.+)/i);
   if (dm) {
-    const name = 'Dr. ' + toTitleCase(dm[1].replace(/^dr\.?\s+/i,'').trim());
-    document.getElementById('f_doctor').value = name;
-    document.getElementById('f_doctor').classList.add('filled');
-    speak('Doctor ' + name);
-    setStatus('listening', '✓ Doctor: ' + name);
+    const name = 'Dr. ' + toTitle(dm[1].replace(/^dr\.?\s+/i, '').trim());
+    document.getElementById('fDoctor').value = name;
+    document.getElementById('fDoctor').classList.add('filled');
+    speak('Doctor ' + name); st('on', '✓ Doctor: ' + name); return;
+  }
+
+  // ── Spelling mode ──
+  if (wizStep === 'spell') {
+    processSpell(t); return;
+  }
+
+  // ── Type selection ──
+  if (wizStep === 'type') {
+    let type = null;
+    if (/\bstrip\b/i.test(t))           type = 'strip';
+    else if (/syrup|liquid|bottle/i.test(t)) type = 'syrup';
+    else if (/tablet|tab|loose/i.test(t))    type = 'tablet';
+    if (type) { selectType(type); return; }
+    speak('Strip, Syrup, ya Tablet bolo'); return;
+  }
+
+  // ── Number step (qty / price / tabs) ──
+  if (wizStep === 'qty' || wizStep === 'price' || wizStep === 'tabs') {
+    const num = parseNum(t);
+    if (num !== null && num >= 0) { submitNum(num); return; }
+    speak('Number bolo'); return;
+  }
+
+  // ── Start new wizard ──
+  if (!wiz) {
+    startWizard(); return;
+  }
+}
+
+// ── Parse spoken number ──
+function parseNum(text) {
+  // Direct digits
+  const stripped = text.replace(/[^0-9.]/g, '');
+  if (stripped && !isNaN(parseFloat(stripped))) return parseFloat(stripped);
+
+  // Word numbers
+  const numMap = {
+    zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
+    eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,
+    eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,
+    seventy:70,eighty:80,ninety:90,hundred:100,thousand:1000,
+    ek:1,do:2,teen:3,char:4,paanch:5,chhe:6,saat:7,aath:8,nau:9,das:10,
+    bees:20,tees:30,chalis:40,pachaas:50,sattar:70,assi:80,nabbe:90,sau:100,
+  };
+  const words = text.toLowerCase().trim().split(/\s+/);
+  let total = 0, cur = 0;
+  let found = false;
+  for (const w of words) {
+    const n = numMap[w];
+    if (n === undefined) continue;
+    found = true;
+    if (n === 100)  { cur = cur === 0 ? 100 : cur * 100; }
+    else if (n === 1000) { total += (cur === 0 ? 1 : cur) * 1000; cur = 0; }
+    else cur += n;
+  }
+  total += cur;
+  return found ? total : null;
+}
+
+// ══════════════════════════════════════════
+//  WIZARD — step by step item builder
+// ══════════════════════════════════════════
+function startWizard() {
+  wiz = { name: '', _type: null, qty: null, price: null, tabs_per_strip: null };
+  wizStep = 'spell';
+  spellBuf = '';
+  showSpellBanner();
+  speak('Medicine ka naam spell karo. Done bolo jab khatam ho.');
+}
+
+function nextStep() {
+  // Determine next missing field
+  if (!wiz._type) {
+    wizStep = 'type';
+    showAskType();
     return;
   }
-
-  // ── MATCH PANEL SELECTION ──
-  if (awaitingMatchSelect) {
-    const num = parseInt(text.trim());
-    if (!isNaN(num) && num >= 1 && num <= matchCandidates.length) {
-      selectMatch(num - 1); return;
-    }
-    const words  = ['pehla','pehli','first','1st','ek','one',
-                    'doosra','doosri','second','2nd','do','two',
-                    'teesra','teesri','third','3rd','teen','three',
-                    'chautha','fourth','4th','char','four'];
-    const winIdx = [0,0,0,0,0,0, 1,1,1,1,1,1, 2,2,2,2,2,2, 3,3,3,3];
-    for (let i = 0; i < words.length; i++) {
-      if (text.trim() === words[i]) { selectMatch(winIdx[i]); return; }
-    }
-    hideMatchPanel(); // new search
-  }
-
-  // ── WIZARD STEP ACTIVE ──
-  if (wizardStep >= 0) {
-    submitWizardAnswer(text); return;
-  }
-
-  // ── GROQ — primary handler for all medicine input ──
-  groqParse(raw.trim());
-}
-
-// ═══════════════════════════════════════════════════
-//  CORRECTIONS + UTILITIES
-// ═══════════════════════════════════════════════════
-function toTitleCase(str) {
-  return str.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase())
-    .replace(/\bDr\b/gi, 'Dr.').replace(/\bDr\.\./g, 'Dr.');
-}
-
-// ═══════════════════════════════════════════════════
-//  REGEX PARSER
-// ═══════════════════════════════════════════════════
-function parseVoiceText(text) {
-  const t = text
-    .replace(/tablets?\s+per\s+strip/gi,'TPS').replace(/tabs?\s+per\s+strip/gi,'TPS')
-    .replace(/tablets?\s+strip/gi,'TPS').replace(/tabs?\s+strip/gi,'TPS');
-  let m;
-  // Mixed: "Dolo 1 strip 3 tablet 10 TPS 20"
-  m = t.match(/^(.+?)\s+(\d+)\s+strips?\s+(\d+)\s+tablets?\s+(?:TPS\s+)?(\d+)\s+(?:TPS\s+)?(\d+(?:\.\d+)?)/i);
-  if (m) return {name:cleanName(m[1]),strip_qty:+m[2],tablet_qty:+m[3],tabs_per_strip:+m[4],strip_price:+m[5]};
-  // Strip only: "Dolo 2 strip 34"
-  m = t.match(/^(.+?)\s+(\d+)\s+strips?\s+(\d+(?:\.\d+)?)/i);
-  if (m) return {name:cleanName(m[1]),strip_qty:+m[2],tablet_qty:0,tabs_per_strip:null,strip_price:+m[3]};
-  // Loose tablets: "Dolo 3 tablet 10 TPS 20"
-  m = t.match(/^(.+?)\s+(\d+)\s+tablets?\s+(?:TPS\s+)?(\d+)\s+(?:TPS\s+)?(\d+(?:\.\d+)?)/i);
-  if (m) return {name:cleanName(m[1]),strip_qty:0,tablet_qty:+m[2],tabs_per_strip:+m[3],strip_price:+m[4]};
-  // Minimal: "Dolo 2 34"
-  m = t.match(/^(.+?)\s+(\d+)\s+(\d+(?:\.\d+)?)\s*(?:rupees|rs|₹)?$/i);
-  if (m) return {name:cleanName(m[1]),strip_qty:+m[2],tablet_qty:0,tabs_per_strip:null,strip_price:+m[3]};
-  return null;
-}
-function cleanName(n) {
-  return n.replace(/\b(dolo|crocin|paracetamol|combiflam|ibuprofen|metformin|atorvastatin|aspirin|omeprazole|pantoprazole|azithromycin|cetirizine|montelukast|amoxicillin|levofloxacin|becosules|ranitidine|fexofenadine|metronidazole)\b/gi, m => m[0].toUpperCase()+m.slice(1).toLowerCase()).replace(/\s+/g,' ').trim();
-}
-
-
-// ═══════════════════════════════════════════════════
-//  STEP-BY-STEP MIC WIZARD
-// ═══════════════════════════════════════════════════
-
-const WIZARD_STEPS = {
-  name:          { question: 'Medicine ka naam bolo',                      hint: 'e.g. Dolo 650, Crocin',   inputType: 'text' },
-  med_type:      { question: 'Strip hai, Syrup hai, ya loose Tablet?',     hint: 'Strip / Syrup / Tablet',  inputType: 'text' },
-  qty:           { question: 'Kitna quantity hai?',                        hint: 'e.g. 2',                  inputType: 'num'  },
-  price:         { question: 'Price kya hai — per unit MRP?',              hint: 'e.g. 34',                 inputType: 'num'  },
-  tabs_per_strip:{ question: 'Ek strip mein kitni tablets hain?',          hint: 'e.g. 10, 15',             inputType: 'num'  },
-};
-
-function getStepQuestion(key) {
-  const type = wizardItem._type || 'strip';
-  if (key === 'qty') {
-    if (type === 'syrup')  return 'Kitni bottles hain?';
-    if (type === 'tablet') return 'Kitni loose tablets hain?';
-    return 'Kitni strips hain?';
-  }
-  if (key === 'price') {
-    if (type === 'syrup')  return 'Ek bottle ka price kya hai?';
-    return 'Ek strip ka MRP kya hai?';
-  }
-  return WIZARD_STEPS[key].question;
-}
-
-let wizardStep  = -1;
-let wizardQueue = [];
-let wizardItem  = {};
-let wizardMicRec = null;
-
-function buildWizardQueue(partial) {
-  const all = ['name', 'med_type', 'qty', 'price', 'tabs_per_strip'];
-  return all.filter(k => {
-    if (k === 'name'          && partial.name)            return false;
-    if (k === 'med_type'      && partial._type)           return false;
-    if (k === 'qty'           && partial.qty != null)     return false;
-    if (k === 'price'         && partial.price)           return false;
-    if (k === 'tabs_per_strip'&& partial.tabs_per_strip)  return false;
-    return true;
-  });
-}
-
-function startWizard(partialItem) {
-  wizardItem  = { ...partialItem };
-  wizardQueue = buildWizardQueue(wizardItem);
-  wizardStep  = 0;
-  runNextWizardStep();
-}
-
-function runNextWizardStep() {
-  while (wizardStep < wizardQueue.length) {
-    const key  = wizardQueue[wizardStep];
-    const type = wizardItem._type;
-    // tabs_per_strip: skip only for syrup
-    if (key === 'tabs_per_strip' && type === 'syrup') { wizardStep++; continue; }
-    showWizardStep(key);
+  if (wiz.qty === null) {
+    wizStep = 'qty';
+    const q = wiz._type === 'syrup'  ? 'Kitni bottles hain?' :
+              wiz._type === 'tablet' ? 'Kitni loose tablets hain?' :
+                                       'Kitni strips hain?';
+    showAskNum(q, 'e.g. 2');
+    speak(q);
     return;
   }
-  finalizeWizardItem();
+  if (wiz.price === null) {
+    wizStep = 'price';
+    const q = wiz._type === 'syrup' ? 'Ek bottle ka price?' : 'Ek strip ka MRP?';
+    showAskNum(q, 'e.g. 30');
+    speak(q);
+    return;
+  }
+  if (wiz._type !== 'syrup' && wiz.tabs_per_strip === null) {
+    wizStep = 'tabs';
+    showAskNum('Ek strip mein kitni tablets hain?', 'e.g. 10 ya 15');
+    speak('Ek strip mein kitni tablets?');
+    return;
+  }
+  // All fields filled
+  finalizeWizard();
 }
 
-function finalizeWizardItem() {
-  wizardStep = -1;
-  hideBanner();
-  const it = wizardItem;
-  wizardItem = {}; wizardQueue = [];
+function finalizeWizard() {
+  const it = wiz;
+  wiz = null; wizStep = null;
+  hideSpellBanner(); hideAskBanner();
 
   const qty   = it.qty   || 1;
   const price = it.price || 0;
@@ -1106,553 +639,398 @@ function finalizeWizardItem() {
   if (type === 'syrup') {
     entry = { name: it.name, strip_qty: qty, tablet_qty: 0, tabs_per_strip: null, strip_price: price };
   } else if (type === 'tablet') {
-    // qty = loose tablets, price = strip MRP, tps = tabs per strip
-    // tablet_price = price / tps, total = qty * tablet_price
     entry = { name: it.name, strip_qty: 0, tablet_qty: qty, tabs_per_strip: tps || 1, strip_price: price };
   } else {
     entry = { name: it.name, strip_qty: qty, tablet_qty: 0, tabs_per_strip: tps, strip_price: price };
   }
 
-  pushItem(entry);
+  const calc = calcEntry(entry);
+  items.push(calc);
+  renderItems();
   speak(it.name + ' added');
-  setStatus('listening', '✓ ' + it.name + ' added. Next medicine bolo...');
+  toast(it.name + ' — ₹' + calc.total.toFixed(2), 'ok');
+  st('on', '✓ ' + it.name + ' added. Next medicine ke liye mic press karein.');
 }
 
-function showWizardStep(key) {
-  const question = getStepQuestion(key);
-  const step     = WIZARD_STEPS[key];
-  document.getElementById('askQuestion').textContent = question;
-  document.getElementById('askHint').textContent     = step.hint;
-  document.getElementById('askInput').value          = '';
-  document.getElementById('askInput').inputmode      = step.inputType === 'num' ? 'decimal' : 'text';
+function cancelWizard() {
+  wiz = null; wizStep = null; spellBuf = '';
+  hideSpellBanner(); hideAskBanner();
+  st('', 'Cancelled. Ready.');
+}
+
+// ── Spelling ──
+function showSpellBanner() {
+  spellBuf = '';
+  updateSpellDisplay();
+  document.getElementById('spellBanner').classList.add('show');
+  st('on', '🔤 Spell karo — har letter alag bolo | <span class="live">done</span> = confirm');
+}
+function hideSpellBanner() {
+  document.getElementById('spellBanner').classList.remove('show');
+}
+function updateSpellDisplay() {
+  document.getElementById('spellDisplay').innerHTML =
+    (spellBuf || '') + '<span class="spell-cursor"></span>';
+}
+function processSpell(raw) {
+  const tokens = raw.toLowerCase().trim().split(/\s+/);
+  for (const tok of tokens) {
+    const mapped = SM[tok];
+    if (mapped === '__DONE__') { spellDone(); return; }
+    if (mapped === '__DEL__')  { spellBuf = spellBuf.slice(0, -1); }
+    else if (mapped === '__CLR__') { spellBuf = ''; }
+    else if (mapped !== undefined) { spellBuf += mapped; }
+    // unknown token — silently ignored
+  }
+  updateSpellDisplay();
+  // Echo single character
+  if (tokens.length === 1) {
+    const c = SM[tokens[0]];
+    if (c && !c.startsWith('__')) speak(c);
+  }
+}
+function spellDone() {
+  const name = spellBuf.trim();
+  if (!name) { speak('Kuch toh likho pehle'); return; }
+  const titled = toTitle(name);
+  wiz.name = titled;
+  spellBuf = '';
+  hideSpellBanner();
+  toast('Name: ' + titled, 'ok');
+  speak(titled + ' — type bolo');
+  nextStep();
+}
+
+// ── Type selection ──
+function showAskType() {
+  document.getElementById('askQ').textContent = 'Strip hai, Syrup hai, ya loose Tablet?';
+  document.getElementById('askHintTxt').textContent = 'Bolo ya button press karo';
+  document.getElementById('typeBtns').style.display = 'grid';
+  document.getElementById('numRow').style.display = 'none';
   document.getElementById('askBanner').classList.add('show');
-  setTimeout(() => speak(question), 300);
-  setStatus('listening', '\uD83C\uDF99 ' + question);
+  speak('Strip, Syrup, ya loose Tablet?');
+  st('on', '🎙 Strip, Syrup, ya loose Tablet?');
+}
+function selectType(type) {
+  if (!wiz) return;
+  wiz._type = type;
+  hideAskBanner();
+  toast('Type: ' + type);
+  nextStep();
 }
 
-function startWizardMic() {
-  const key = wizardQueue[wizardStep];
-  if (key) setStatus('listening', '\uD83C\uDF99 ' + getStepQuestion(key));
-}
-function stopWizardMic() {}
-
-function submitWizardAnswer(raw) {
-  if (wizardStep < 0 || wizardStep >= wizardQueue.length) return;
-  const key  = wizardQueue[wizardStep];
-  const step = WIZARD_STEPS[key];
-  raw = (raw || document.getElementById('askInput').value || '').trim().toLowerCase();
-  if (!raw) return;
-
-  if (key === 'med_type') {
-    if      (/syrup|liquid|bottle|botol|sharbat/i.test(raw)) wizardItem._type = 'syrup';
-    else if (/tablet|tab|loose|khuli/i.test(raw))            wizardItem._type = 'tablet';
-    else                                                      wizardItem._type = 'strip';
-    // Syrup: drop tabs_per_strip from queue
-    if (wizardItem._type === 'syrup') {
-      wizardQueue = wizardQueue.filter(k => k !== 'tabs_per_strip');
-    }
-    document.getElementById('askInput').value = '';
-    wizardStep++;
-    runNextWizardStep();
-    return;
-  }
-
-  if (step.inputType === 'num') {
-    const num = parseFloat(raw.replace(/[^0-9.]/g, ''));
-    if (isNaN(num) || num < 0) {
-      speak('Please say a number');
-      setTimeout(() => speak(getStepQuestion(key)), 1400);
-      return;
-    }
-    wizardItem[key] = num;
-  } else {
-    const name = toTitleCase(raw.replace(/\b(ka naam|naam|name|medicine|dawa)\b/gi, '').trim());
-    if (!name) { speak('Please say the medicine name again'); return; }
-    wizardItem.name = name;
-  }
-
+// ── Number input ──
+function showAskNum(question, hint) {
+  document.getElementById('askQ').textContent = question;
+  document.getElementById('askHintTxt').textContent = hint;
+  document.getElementById('typeBtns').style.display = 'none';
+  document.getElementById('numRow').style.display = 'flex';
   document.getElementById('askInput').value = '';
-  wizardStep++;
-  runNextWizardStep();
+  document.getElementById('askBanner').classList.add('show');
+  st('on', '🎙 ' + question);
 }
-
-function askFor(q, f)    { startWizard(pendingItem || {}); }
-function hideBanner() {
+function submitNum(val) {
+  const num = val !== undefined ? val : parseFloat(document.getElementById('askInput').value);
+  if (isNaN(num) || num < 0) { speak('Valid number bolo'); return; }
+  document.getElementById('askInput').value = '';
+  hideAskBanner();
+  if (wizStep === 'qty')   wiz.qty = num;
+  else if (wizStep === 'price') wiz.price = num;
+  else if (wizStep === 'tabs')  wiz.tabs_per_strip = num;
+  nextStep();
+}
+function hideAskBanner() {
   document.getElementById('askBanner').classList.remove('show');
-  pendingField = null; wizardStep = -1; wizardQueue = [];
-}
-function submitAskInput() {
-  const v = document.getElementById('askInput').value.trim();
-  if (v) submitWizardAnswer(v);
-}
-function fillPendingField(t) { submitWizardAnswer(t); }
-function askFollowUp(p)      { startWizard(p || {}); }
-
-function handleParsed(parsed) {
-  if (parsed.name && parsed.strip_price) {
-    pushItem(parsed);
-    speak(parsed.name + ' added');
-    setStatus('listening', '✓ ' + parsed.name + ' added. Next bolo...');
-  } else {
-    const wi = {
-      name:  parsed.name || '',
-      _type: parsed.strip_qty > 0 ? 'strip' : (parsed.tablet_qty > 0 ? 'tablet' : null),
-      qty:   parsed.strip_qty || parsed.tablet_qty || null,
-      price: parsed.strip_price || null,
-      tabs_per_strip: parsed.tabs_per_strip || null,
-    };
-    startWizard(wi);
-  }
-}
-// ═══════════════════════════════════════════════════
-//  GROQ — complete voice → bill item pipeline
-// ═══════════════════════════════════════════════════
-async function groqParse(rawText) {
-  if (!CONFIG.GROQ_API_KEY || CONFIG.GROQ_API_KEY.startsWith('YOUR_')) {
-    setStatus('error', '⚠ GROQ_API_KEY not set in CONFIG');
-    speak('Groq key nahi hai. CONFIG mein daalo.');
-    return;
-  }
-
-  setStatus('thinking', '⚡ <span class="transcript-live">Samajh raha hoon...</span>');
-
-  // Send full DB list to Groq so it can match names directly
-  const dbList = medicineDB.length > 0
-    ? medicineDB.map(m => m.name).join(', ')
-    : '';
-
-  const sysPrompt = `You are a billing assistant for an Indian medical pharmacy.
-Your job: extract medicine billing info from voice input.
-Voice input may have speech recognition errors — "Ahmedabad" may mean "Amlovas", "polo" may mean "Dolo", etc.
-${dbList ? `Match medicine name to closest from this pharmacy's stock list: ${dbList}` : ''}
-
-Always return ONLY a JSON object. No explanation. No markdown. No extra text.`;
-
-  const userPrompt = `Voice input: "${rawText}"
-
-Return JSON:
-{
-  "name": "medicine name (exact match from stock list if provided)",
-  "qty": 1,
-  "type": "strip",
-  "price": 0,
-  "tabs_per_strip": null,
-  "confidence": "high"
 }
 
-Rules:
-- name: closest match from stock list. If not in stock list, use best guess.
-- qty: how many strips/bottles/tablets. Default 1 if not said.
-- type: "strip" (tablet strips, default), "syrup" (liquid/bottle/ml), "tablet" (loose tablets)
-- price: MRP per unit in rupees. 0 if not mentioned.
-- tabs_per_strip: number of tablets per strip. null if syrup or not mentioned.
-- confidence: "high" if name clearly matches stock, "low" if guessing`;
-
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + CONFIG.GROQ_API_KEY
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: sysPrompt },
-          { role: 'user',   content: userPrompt }
-        ],
-        max_tokens: 200,
-        temperature: 0.0,
-        response_format: { type: 'json_object' }
-      })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || 'HTTP ' + res.status);
-    }
-
-    const data = await res.json();
-    const p    = JSON.parse(data.choices?.[0]?.message?.content || '{}');
-    if (!p.name) throw new Error('No name returned');
-
-    // Show what Groq understood
-    const summary = p.name
-      + (p.qty   ? ' × ' + p.qty         : '')
-      + (p.price ? ' @ ₹' + p.price      : '')
-      + (p.confidence === 'low' ? ' ⚠ low confidence' : '');
-    setStatus('listening', '⚡ ' + summary);
-
-    // Only trust Groq's type if user explicitly said strip/syrup/tablet
-    // Otherwise ask — default "strip" from Groq is just a guess
-    const typeWords = /strip|strips|syrup|liquid|bottle|tablet|tab|loose/i.test(rawText);
-
-    startWizard({
-      name:           p.name,
-      _type:          typeWords ? (p.type || 'strip').toLowerCase() : null,
-      qty:            p.qty            || null,
-      price:          p.price          || null,
-      tabs_per_strip: p.tabs_per_strip || null,
-    });
-
-  } catch(e) {
-    setStatus('error', '⚡ Groq error: ' + e.message);
-    speak('Error. Dobara bolo.');
-  }
+// ══════════════════════════════════════════
+//  CALCULATION
+// ══════════════════════════════════════════
+function calcEntry(it) {
+  const sq  = it.strip_qty  || 0;
+  const tq  = it.tablet_qty || 0;
+  const tps = it.tabs_per_strip || null;
+  const sp  = it.strip_price || 0;
+  const tp  = (tps && sp) ? sp / tps : 0;
+  return { ...it, tablet_price: tp, strip_total: sq*sp, tablet_total: tq*tp, total: sq*sp + tq*tp };
 }
 
-// Keep old name as alias for compatibility
-async function aiParse(text) { return groqParse(text); }
-
-
-// ═══════════════════════════════════════════════════
-//  CALCULATION ENGINE
-// ═══════════════════════════════════════════════════
-function calcItem(item) {
-  const sq = item.strip_qty||0, tq = item.tablet_qty||0;
-  const tps = item.tabs_per_strip||null, sp = item.strip_price||0;
-  const tp = (tps && sp) ? sp/tps : 0;
-  return { name:item.name||'Unknown', strip_qty:sq, tablet_qty:tq, tabs_per_strip:tps, strip_price:sp,
-           tablet_price:tp, strip_total:sq*sp, tablet_total:tq*tp, total:sq*sp+tq*tp };
-}
-function pushItem(raw) {
-  const e = calcItem(raw); items.push(e); renderItems();
-  showToast(`${e.name} added — ₹${e.total.toFixed(2)}`,'success');
-}
-function deleteItem(idx) { items.splice(idx,1); renderItems(); }
-function addManualItem() {
-  const name = document.getElementById('m_name').value.trim();
-  const strips = parseFloat(document.getElementById('m_strip').value)||0;
-  const tabs = parseFloat(document.getElementById('m_tablet').value)||0;
-  const tps = parseFloat(document.getElementById('m_tabsps').value)||null;
-  const mrp = parseFloat(document.getElementById('m_mrp').value)||0;
-  if (!name) { showToast('Medicine name required','error'); return; }
-  if (!mrp)  { showToast('MRP required','error'); return; }
-  pushItem({name,strip_qty:strips,tablet_qty:tabs,tabs_per_strip:tps,strip_price:mrp});
-  ['m_name','m_strip','m_tablet','m_tabsps','m_mrp'].forEach(id => {
-    const el = document.getElementById(id); el.value = id==='m_strip'||id==='m_tablet' ? '0' : '';
-  });
-}
-function toggleManual() { document.getElementById('manualForm').classList.toggle('show'); }
-
-// ═══════════════════════════════════════════════════
-//  RENDER
-// ═══════════════════════════════════════════════════
-// ── DISCOUNT TYPE TOGGLE ──
-let discType = 'pct'; // 'pct' or 'amt'
-function toggleDiscType() {
-  discType = discType === 'pct' ? 'amt' : 'pct';
-  const btn = document.getElementById('discTypeBtn');
-  const inp = document.getElementById('discountInput');
-  if (discType === 'pct') {
-    btn.textContent = '%';
-    inp.max = 100; inp.step = 1;
-  } else {
-    btn.textContent = '₹';
-    inp.removeAttribute('max'); inp.step = 1;
-  }
-  inp.value = 0;
+// ══════════════════════════════════════════
+//  DISCOUNT
+// ══════════════════════════════════════════
+function toggleDisc() {
+  discMode = discMode === 'pct' ? 'amt' : 'pct';
+  document.getElementById('discToggle').textContent = discMode === 'pct' ? '%' : '₹';
+  document.getElementById('discVal').value = '0';
   renderItems();
 }
-
-function getDiscountAmt(subTotal) {
-  const val = Math.max(0, parseFloat(document.getElementById('discountInput')?.value || 0) || 0);
-  if (discType === 'pct') {
-    const pct = Math.min(100, val);
-    return { amt: subTotal * pct / 100, pct };
-  } else {
-    const amt = Math.min(subTotal, val);
-    return { amt, pct: subTotal > 0 ? (amt / subTotal * 100) : 0 };
+function getDiscount(sub) {
+  const v = Math.max(0, parseFloat(document.getElementById('discVal')?.value || 0) || 0);
+  if (discMode === 'pct') {
+    const amt = sub * Math.min(100, v) / 100;
+    return { amt, pct: v };
   }
+  const amt = Math.min(sub, v);
+  return { amt, pct: sub > 0 ? amt/sub*100 : 0 };
 }
 
+// ══════════════════════════════════════════
+//  RENDER ITEMS
+// ══════════════════════════════════════════
 function renderItems() {
-  const list = document.getElementById('itemsList');
-  const tb = document.getElementById('totalsBlock');
+  const body = document.getElementById('itemsBody');
+  const tb   = document.getElementById('totalsBlock');
+
   if (!items.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">💊</div><div>No items yet.</div></div>`;
-    tb.style.display='none'; document.getElementById('printBtn').disabled=true; return;
+    body.innerHTML = '<div class="empty">💊 No items yet. Press 🎤 to add medicine.</div>';
+    tb.style.display = 'none';
+    document.getElementById('printBtn').disabled = true;
+    return;
   }
-  list.innerHTML = items.map((item,idx) => {
-    const parts=[];
-    if (item.strip_qty>0) parts.push(`${item.strip_qty}str×₹${item.strip_price}`);
-    if (item.tablet_qty>0&&item.tablet_price>0) parts.push(`${item.tablet_qty}tab×₹${item.tablet_price.toFixed(2)}`);
+
+  body.innerHTML = items.map((it, i) => {
+    const parts = [];
+    if (it.strip_qty > 0) parts.push(it.strip_qty + 'str×₹' + it.strip_price);
+    if (it.tablet_qty > 0 && it.tablet_price > 0)
+      parts.push(it.tablet_qty + 'tab×₹' + it.tablet_price.toFixed(2));
     return `<div class="item-row">
-      <span class="item-name">${item.name}<small>${parts.join(' + ')}</small></span>
-      <span class="item-num">${item.strip_qty||'—'}</span>
-      <span class="item-num ${item.tablet_qty?'':'dim'}">${item.tablet_qty||'—'}</span>
-      <span class="item-num ${item.tabs_per_strip?'':'dim'}">${item.tabs_per_strip||'—'}</span>
-      <span class="item-num">₹${item.strip_price}</span>
-      <span class="item-total">₹${item.total.toFixed(2)}</span>
-      <button class="del-btn" onclick="deleteItem(${idx})">×</button>
+      <span class="iname">${it.name}<small>${parts.join(' + ')}</small></span>
+      <span class="inum">${it.strip_qty  || '—'}</span>
+      <span class="inum ${it.tablet_qty  ? '' : 'dim'}">${it.tablet_qty  || '—'}</span>
+      <span class="inum ${it.tabs_per_strip ? '' : 'dim'}">${it.tabs_per_strip || '—'}</span>
+      <span class="inum">₹${it.strip_price}</span>
+      <span class="itotal">₹${it.total.toFixed(2)}</span>
+      <button class="del" onclick="delItem(${i})">×</button>
     </div>`;
   }).join('');
 
-  const subTotal   = items.reduce((s,i)=>s+i.total, 0);
-  const { amt: discAmt, pct: discPct } = getDiscountAmt(subTotal);
-  const afterDisc  = subTotal - discAmt;
-  const rounded    = Math.round(afterDisc);
-  const roff       = rounded - afterDisc;
+  const sub = items.reduce((s, i) => s + i.total, 0);
+  const { amt: dAmt } = getDiscount(sub);
+  const after   = sub - dAmt;
+  const rounded = Math.round(after);
+  const roff    = rounded - after;
 
-  document.getElementById('rawTotal').textContent    = `₹${subTotal.toFixed(2)}`;
-  document.getElementById('discountAmt').textContent = `-₹${discAmt.toFixed(2)}`;
-  document.getElementById('roundOff').textContent    = `${roff>=0?'+':''}₹${roff.toFixed(2)}`;
-  document.getElementById('totalAmount').textContent = `₹${rounded}`;
-  document.getElementById('itemCount').textContent   = `${items.length} item${items.length!==1?'s':''}`;
-  tb.style.display='block'; document.getElementById('printBtn').disabled=false;
+  document.getElementById('tSub').textContent   = '₹' + sub.toFixed(2);
+  document.getElementById('discAmt').textContent = '-₹' + dAmt.toFixed(2);
+  document.getElementById('tRoff').textContent   = (roff >= 0 ? '+' : '') + '₹' + roff.toFixed(2);
+  document.getElementById('tTotal').textContent  = '₹' + rounded;
+  document.getElementById('tCount').textContent  = items.length + ' item' + (items.length !== 1 ? 's' : '');
+  tb.style.display = 'block';
+  document.getElementById('printBtn').disabled = false;
 }
+
+function delItem(i) { items.splice(i, 1); renderItems(); }
 
 function clearBill() {
-  items = [];
-  discType = 'pct';
-  const di = document.getElementById('discountInput');
-  const db = document.getElementById('discTypeBtn');
-  if (di) { di.value = '0'; di.max = 100; di.step = 1; }
-  if (db) { db.textContent = '%'; }
-  renderItems();
-  ['f_patient','f_doctor','f_mobile','f_address'].forEach(id=>{
+  items = []; discMode = 'pct';
+  const dv = document.getElementById('discVal'); if (dv) dv.value = '0';
+  const dt = document.getElementById('discToggle'); if (dt) dt.textContent = '%';
+  cancelWizard(); renderItems();
+  ['fPatient','fDoctor','fMobile'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) { el.value=''; el.classList.remove('filled'); }
+    if (el) { el.value = ''; el.classList.remove('filled'); }
   });
-  setStatus('','Bill cleared. Ready.');
+  st('', 'Bill cleared. Ready.');
 }
 
-// ═══════════════════════════════════════════════════
-//  THERMAL RECEIPT BUILDER
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════
+//  RECEIPT
+// ══════════════════════════════════════════
 function showReceipt() {
-  // Patient name is MANDATORY
-  const patientEl = document.getElementById('f_patient');
-  const patient = patientEl.value.trim();
+  const ptEl   = document.getElementById('fPatient');
+  const patient = ptEl.value.trim();
   if (!patient) {
-    patientEl.classList.add('required-empty');
-    patientEl.focus();
-    showToast('Patient ka naam zaroori hai!', 'error');
+    ptEl.classList.add('req-empty');
+    ptEl.focus();
+    toast('Patient naam zaroori hai!', 'er');
     speak('Patient ka naam bharo');
-    setTimeout(() => patientEl.classList.remove('required-empty'), 600);
+    setTimeout(() => ptEl.classList.remove('req-empty'), 600);
     return;
   }
 
   const now    = new Date();
-  const date   = now.toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'});
-  const time   = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-  const billNo = `${CONFIG.BILL_PREFIX}-${String(billCounter).padStart(3,'0')}`;
-  const doctor = document.getElementById('f_doctor').value.trim();
-  const mobile = document.getElementById('f_mobile').value.trim();
+  const date   = now.toLocaleDateString('en-IN', {day:'2-digit',month:'2-digit',year:'numeric'});
+  const time   = now.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'});
+  const billNo = `${CFG.BILL_PREFIX}-${String(billCtr).padStart(3,'0')}`;
+  const doctor = document.getElementById('fDoctor').value.trim();
+  const mobile = document.getElementById('fMobile').value.trim();
+  const sub    = items.reduce((s, i) => s + i.total, 0);
+  const { amt: dAmt, pct: dPct } = getDiscount(sub);
+  const after   = sub - dAmt;
+  const rounded = Math.round(after);
+  const roff    = rounded - after;
 
-  const subTotal  = items.reduce((s,i)=>s+i.total, 0);
-  const { amt: discAmt, pct: discPct } = getDiscountAmt(subTotal);
-  const afterDisc = subTotal - discAmt;
-  const rounded   = Math.round(afterDisc);
-  const roff      = rounded - afterDisc;
-
-  let itemLines = '';
-  items.forEach((it, idx) => {
-    itemLines += `<div class="r-row"><span class="r-bold">${idx+1}. ${it.name}</span></div>`;
-    if (it.strip_qty > 0) itemLines += `<div class="r-row-indent"><span>${it.strip_qty} strip x Rs.${it.strip_price}</span><span>Rs.${it.strip_total.toFixed(2)}</span></div>`;
-    if (it.tablet_qty > 0) itemLines += `<div class="r-row-indent"><span>${it.tablet_qty} tab x Rs.${it.tablet_price.toFixed(2)}</span><span>Rs.${it.tablet_total.toFixed(2)}</span></div>`;
+  let lines = '';
+  items.forEach((it, i) => {
+    lines += `<div class="rrow"><span class="rbold">${i+1}. ${it.name}</span></div>`;
+    if (it.strip_qty > 0)
+      lines += `<div class="rind"><span>${it.strip_qty} strip × Rs.${it.strip_price}</span><span>Rs.${it.strip_total.toFixed(2)}</span></div>`;
+    if (it.tablet_qty > 0)
+      lines += `<div class="rind"><span>${it.tablet_qty} tab × Rs.${it.tablet_price.toFixed(2)}</span><span>Rs.${it.tablet_total.toFixed(2)}</span></div>`;
   });
 
-  const discLabel  = discType === 'pct'
-    ? `Discount (${discPct.toFixed(1)}%)`
-    : `Discount`;
-  const discLine   = discAmt > 0 ? `<div class="r-roff"><span>${discLabel}</span><span>-Rs.${discAmt.toFixed(2)}</span></div>` : '';
-  const roundOffLine = Math.abs(roff) > 0.001 ? `<div class="r-roff"><span>Round Off</span><span>${roff>=0?'+':''}Rs.${roff.toFixed(2)}</span></div>` : '';
+  const discLine = dAmt > 0
+    ? `<div class="rrow"><span>Discount${discMode==='pct'?' ('+dPct.toFixed(1)+'%)':''}</span><span>-Rs.${dAmt.toFixed(2)}</span></div>` : '';
+  const roffLine = Math.abs(roff) > 0.001
+    ? `<div class="rrow"><span>Round Off</span><span>${roff>=0?'+':''}Rs.${roff.toFixed(2)}</span></div>` : '';
 
-  document.getElementById('receiptContent').innerHTML = `
-    <div class="r-center">
-      <div class="r-name" style="font-size:15px">${CONFIG.STORE_NAME.toUpperCase()}</div>
-      <div style="font-size:11px">${CONFIG.STORE_ADDR}</div>
-      <div style="font-size:11px">Ph: ${CONFIG.STORE_PHONE}</div>
-      ${CONFIG.STORE_GSTIN ? `<div style="font-size:11px;font-weight:700">GSTIN: ${CONFIG.STORE_GSTIN}</div>` : ''}
+  document.getElementById('rContent').innerHTML = `
+    <div class="rc">
+      <div style="font-size:15px;font-weight:700">${CFG.STORE_NAME.toUpperCase()}</div>
+      <div style="font-size:11px">${CFG.STORE_ADDR}</div>
+      <div style="font-size:11px">Ph: ${CFG.STORE_PHONE}</div>
+      <div style="font-size:11px;font-weight:700">GSTIN: ${CFG.STORE_GSTIN}</div>
     </div>
-    <hr class="r-divider-solid" style="margin:8px 0 6px">
-    <div class="r-row"><span>Bill No:</span><span class="r-bold">${billNo}</span></div>
-    <div class="r-row"><span>Date  :</span><span>${date}</span></div>
-    <div class="r-row"><span>Time  :</span><span>${time}</span></div>
-    <hr class="r-divider">
-    <div class="r-row"><span>Patient:</span><span class="r-bold">${patient}</span></div>
-    ${doctor ? `<div class="r-row"><span>Doctor :</span><span>${doctor}</span></div>` : ''}
-    ${mobile ? `<div class="r-row"><span>Mobile :</span><span>${mobile}</span></div>` : ''}
-    <hr class="r-divider">
-    ${itemLines}
-    <hr class="r-divider">
-    <div class="r-row"><span>Sub Total</span><span>Rs.${subTotal.toFixed(2)}</span></div>
-    ${discLine}
-    ${roundOffLine}
-    <div class="r-grand"><span>TOTAL</span><span>Rs.${rounded}</span></div>
-    <hr class="r-divider" style="margin-top:8px">
-    <div class="r-center" style="font-size:11px;margin-top:6px">
-      Thank you! Get Well Soon 🙏
-    </div>
-  `;
+    <hr class="rdivs" style="margin:8px 0 6px">
+    <div class="rrow"><span>Bill No:</span><span class="rbold">${billNo}</span></div>
+    <div class="rrow"><span>Date  :</span><span>${date}</span></div>
+    <div class="rrow"><span>Time  :</span><span>${time}</span></div>
+    <hr class="rdiv">
+    <div class="rrow"><span>Patient:</span><span class="rbold">${patient}</span></div>
+    ${doctor ? `<div class="rrow"><span>Doctor :</span><span>${doctor}</span></div>` : ''}
+    ${mobile ? `<div class="rrow"><span>Mobile :</span><span>${mobile}</span></div>` : ''}
+    <hr class="rdiv">
+    ${lines}
+    <hr class="rdiv">
+    <div class="rrow"><span>Sub Total</span><span>Rs.${sub.toFixed(2)}</span></div>
+    ${discLine}${roffLine}
+    <div class="rgrand"><span>TOTAL</span><span>Rs.${rounded}</span></div>
+    <hr class="rdiv" style="margin-top:8px">
+    <div class="rc" style="font-size:11px;margin-top:6px">
+      Medicines once sold not taken back.<br>Thank you! Get Well Soon 🙏
+    </div>`;
 
-  document.getElementById('receiptOverlay').classList.add('show');
-  saveToSheets(billNo, date, time, subTotal, rounded, roff, patient, doctor, mobile,
-    document.getElementById('f_address').value.trim(), discPct, discAmt);
-  billCounter++;
-  localStorage.setItem('sms_bill_counter', billCounter);
-  updateClock();
+  document.getElementById('rOverlay').classList.add('show');
+  saveSheets(billNo, date, time, sub, rounded, roff, patient, doctor, mobile, dPct, dAmt);
+  billCtr++;
+  localStorage.setItem('sms_ctr', billCtr);
+  tick();
 }
-function closeReceipt() { document.getElementById('receiptOverlay').classList.remove('show'); }
+function closeReceipt() { document.getElementById('rOverlay').classList.remove('show'); }
 
-// ═══════════════════════════════════════════════════
-//  NUMBER TO WORDS
-// ═══════════════════════════════════════════════════
-function numberToWords(n) {
-  if (n===0) return 'Zero';
-  const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
-  const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
-  function h(num) {
-    if (num<20) return ones[num];
-    if (num<100) return tens[Math.floor(num/10)]+(num%10?' '+ones[num%10]:'');
-    return ones[Math.floor(num/100)]+' Hundred'+(num%100?' '+h(num%100):'');
-  }
-  let result='', rem=n;
-  if (rem>=10000000) { result+=h(Math.floor(rem/10000000))+' Crore '; rem%=10000000; }
-  if (rem>=100000)   { result+=h(Math.floor(rem/100000))+' Lakh '; rem%=100000; }
-  if (rem>=1000)     { result+=h(Math.floor(rem/1000))+' Thousand '; rem%=1000; }
-  if (rem>0)         { result+=h(rem); }
-  return result.trim();
-}
-
-// ═══════════════════════════════════════════════════
-//  BLUETOOTH PRINTING
-// ═══════════════════════════════════════════════════
-async function printBluetooth() {
-  if (!navigator.bluetooth) { showToast('Web Bluetooth not available — use Chrome Android','error'); window.print(); return; }
+// ══════════════════════════════════════════
+//  BLUETOOTH PRINT
+// ══════════════════════════════════════════
+async function btPrint() {
+  if (!navigator.bluetooth) { window.print(); return; }
   try {
-    setStatus('thinking','Bluetooth printer connect ho raha hai...');
-    btDevice = await navigator.bluetooth.requestDevice({
-      filters:[{services:['000018f0-0000-1000-8000-00805f9b34fb']},{namePrefix:'Printer'},{namePrefix:'MTP'},{namePrefix:'RPP'},{namePrefix:'BlueTooth'}],
-      optionalServices:['000018f0-0000-1000-8000-00805f9b34fb','e7810a71-73ae-499d-8c15-faa9aef0c3f2','00001800-0000-1000-8000-00805f9b34fb']
+    const dev = await navigator.bluetooth.requestDevice({
+      filters: [
+        { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
+        { namePrefix: 'Printer' }, { namePrefix: 'MTP' }, { namePrefix: 'RPP' }
+      ],
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb',
+        'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
+      ]
     });
-    const server = await btDevice.gatt.connect();
-    setStatus('thinking','Printer connected. Printing...');
-    let char=null;
-    for (const p of [{svc:'000018f0-0000-1000-8000-00805f9b34fb',chr:'00002af1-0000-1000-8000-00805f9b34fb'},{svc:'e7810a71-73ae-499d-8c15-faa9aef0c3f2',chr:'bef8d6c9-9c21-4c9e-b632-bd58c1009f9f'}]) {
-      try { const s=await server.getPrimaryService(p.svc); char=await s.getCharacteristic(p.chr); break; } catch(e) {}
+    const server = await dev.gatt.connect();
+    let char = null;
+    for (const p of [
+      { s:'000018f0-0000-1000-8000-00805f9b34fb', c:'00002af1-0000-1000-8000-00805f9b34fb' },
+      { s:'e7810a71-73ae-499d-8c15-faa9aef0c3f2', c:'bef8d6c9-9c21-4c9e-b632-bd58c1009f9f' },
+    ]) {
+      try { const sv = await server.getPrimaryService(p.s); char = await sv.getCharacteristic(p.c); break; }
+      catch(e) {}
     }
-    if (!char) throw new Error('Printer characteristic not found');
-    await writeChunked(char, buildEscPos());
-    showToast('Bill printed!','success'); setStatus('','Bill printed.');
-  } catch(e) { if (e.name!=='NotFoundError') showToast('BT Error: '+e.message,'error'); setStatus('','BT print failed. Use window.print().'); }
+    if (!char) throw new Error('Characteristic not found');
+    const data = buildEscPos();
+    const CHUNK = 100;
+    for (let i = 0; i < data.length; i += CHUNK) {
+      await char.writeValue(data.slice(i, i + CHUNK));
+      await new Promise(r => setTimeout(r, 40));
+    }
+    toast('Printed!', 'ok');
+  } catch(e) {
+    if (e.name !== 'NotFoundError') toast('BT error: ' + e.message, 'er');
+    window.print();
+  }
 }
-async function writeChunked(char, data) {
-  const CHUNK=100;
-  for (let i=0;i<data.length;i+=CHUNK) { await char.writeValue(data.slice(i,i+CHUNK)); await new Promise(r=>setTimeout(r,40)); }
-}
+
 function buildEscPos() {
-  const enc=new TextEncoder();
-  const now=new Date();
-  const date=now.toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'});
-  const time=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-  const billNo=`${CONFIG.BILL_PREFIX}-${String(billCounter-1).padStart(3,'0')}`;
-  const patient=document.getElementById('f_patient').value.trim()||'—';
-  const doctor=document.getElementById('f_doctor').value.trim();
-  const subTotal=items.reduce((s,i)=>s+i.total,0);
-  const {amt:discAmt,pct:discPct}=getDiscountAmt(subTotal);
-  const afterDisc=subTotal-discAmt;
-  const rounded=Math.round(afterDisc), roff=rounded-afterDisc;
-  const ESC=0x1B,GS=0x1D;
-  const INIT=[ESC,0x40],CEN=[ESC,0x61,0x01],LFT=[ESC,0x61,0x00],BON=[ESC,0x45,0x01],BOFF=[ESC,0x45,0x00],CUT=[GS,0x56,0x41,0x03];
-  let c=[...INIT];
-  const A=a=>c.push(...a),T=t=>c.push(...enc.encode(t));
-  A(CEN);A(BON);T(`${CONFIG.STORE_NAME.toUpperCase()}\n`);A(BOFF);
-  T(`${CONFIG.STORE_ADDR}\n`);
-  T(`Ph: ${CONFIG.STORE_PHONE}\n`);
-  if(CONFIG.STORE_GSTIN) T(`GSTIN: ${CONFIG.STORE_GSTIN}\n`);
+  const enc = new TextEncoder();
+  const now  = new Date();
+  const date = now.toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const time = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const billNo  = `${CFG.BILL_PREFIX}-${String(billCtr-1).padStart(3,'0')}`;
+  const patient = document.getElementById('fPatient').value.trim() || '—';
+  const doctor  = document.getElementById('fDoctor').value.trim();
+  const sub  = items.reduce((s,i) => s+i.total, 0);
+  const { amt:dAmt } = getDiscount(sub);
+  const rounded = Math.round(sub - dAmt);
+  const roff    = rounded - (sub - dAmt);
+
+  const E=0x1B, G=0x1D;
+  const INIT=[E,0x40], CEN=[E,0x61,0x01], LFT=[E,0x61,0x00],
+        BON=[E,0x45,0x01], BOF=[E,0x45,0x00], CUT=[G,0x56,0x41,0x03];
+  let c = [...INIT];
+  const A = a => c.push(...a);
+  const T = t => c.push(...enc.encode(t));
+
+  A(CEN); A(BON); T(CFG.STORE_NAME.toUpperCase()+'\n'); A(BOF);
+  T(CFG.STORE_ADDR+'\n');
+  T('Ph: '+CFG.STORE_PHONE+'\n');
+  T('GSTIN: '+CFG.STORE_GSTIN+'\n');
   T('================================\n');
   A(LFT);
-  T(`Bill No: ${billNo}\n`);
-  T(`Date   : ${date}  Time: ${time}\n`);
+  T('Bill: '+billNo+'\nDate: '+date+'  '+time+'\n');
   T('--------------------------------\n');
-  T(`Patient: ${patient}\n`);
-  if(doctor) T(`Doctor : ${doctor}\n`);
+  T('Patient: '+patient+'\n');
+  if (doctor) T('Doctor : '+doctor+'\n');
   T('--------------------------------\n');
-  items.forEach((it,i)=>{
-    T(`${i+1}. ${it.name}\n`);
-    if(it.strip_qty>0)  T(`   ${it.strip_qty} strip x Rs.${it.strip_price} = Rs.${it.strip_total.toFixed(2)}\n`);
-    if(it.tablet_qty>0) T(`   ${it.tablet_qty} tab x Rs.${it.tablet_price.toFixed(2)} = Rs.${it.tablet_total.toFixed(2)}\n`);
+  items.forEach((it,i) => {
+    T((i+1)+'. '+it.name+'\n');
+    if (it.strip_qty > 0)  T('   '+it.strip_qty+' strip x Rs.'+it.strip_price+' = Rs.'+it.strip_total.toFixed(2)+'\n');
+    if (it.tablet_qty > 0) T('   '+it.tablet_qty+' tab x Rs.'+it.tablet_price.toFixed(2)+' = Rs.'+it.tablet_total.toFixed(2)+'\n');
   });
   T('--------------------------------\n');
-  T(`Sub Total      Rs.${subTotal.toFixed(2)}\n`);
-  if(discAmt>0) T('Discount' + (discType==='pct' ? ' ('+discPct.toFixed(1)+'%)' : '') + '  -Rs.'+discAmt.toFixed(2)+'\n');
-  if(Math.abs(roff)>0.001) T(`Round Off      ${roff>=0?'+':''}Rs.${roff.toFixed(2)}\n`);
+  T('Sub Total  Rs.'+sub.toFixed(2)+'\n');
+  if (dAmt > 0) T('Discount   -Rs.'+dAmt.toFixed(2)+'\n');
+  if (Math.abs(roff) > 0.001) T('Round Off  '+(roff>=0?'+':'')+'Rs.'+roff.toFixed(2)+'\n');
   T('================================\n');
-  A(BON);T(`TOTAL          Rs.${rounded}\n`);A(BOFF);
+  A(BON); T('TOTAL      Rs.'+rounded+'\n'); A(BOF);
   T('================================\n');
-  A(CEN);T('Medicines once sold not taken back.\n');
-  T('Thank you! Get Well Soon\n\n\n');
+  A(CEN); T('Medicines once sold not taken back.\nThank you! Get Well Soon\n\n\n');
   A(CUT);
   return new Uint8Array(c);
 }
 
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════
 //  GOOGLE SHEETS
-// ═══════════════════════════════════════════════════
-async function saveToSheets(billNo, date, time, subTotal, rounded, roff, patient, doctor, mobile, address, discPct, discAmt) {
-  const url = CONFIG.GOOGLE_SHEET_SCRIPT_URL;
-  if (!url||url.startsWith('YOUR_')) { document.getElementById('sheetsStatus').textContent='⚠ GOOGLE_SHEET_SCRIPT_URL not configured'; return; }
-  document.getElementById('sheetsStatus').textContent='Syncing...';
-  document.getElementById('sheetsStatus').className='sheets-status';
-  const rows = items.map(it=>({
-    date, time, bill_no:billNo,
-    patient_name:patient, doctor_name:doctor, mobile,
-    medicine:it.name, strip_qty:it.strip_qty, tablet_qty:it.tablet_qty,
-    tabs_per_strip:it.tabs_per_strip, mrp:it.strip_price, item_total:it.total,
-    round_off:roff, discount_pct:discPct||0, discount_amt:discAmt||0, bill_total:rounded,
+// ══════════════════════════════════════════
+async function saveSheets(billNo, date, time, sub, rounded, roff, patient, doctor, mobile, dPct, dAmt) {
+  const url = CFG.SHEETS_URL;
+  if (!url || url.startsWith('YOUR_')) return;
+  document.getElementById('sheetsStatus').textContent = 'Syncing...';
+  document.getElementById('sheetsStatus').className = 'sheets-st';
+  const rows = items.map(it => ({
+    date, time, bill_no: billNo, patient, doctor, mobile,
+    medicine: it.name, strip_qty: it.strip_qty, tablet_qty: it.tablet_qty,
+    tabs_per_strip: it.tabs_per_strip, mrp: it.strip_price,
+    item_total: it.total, discount_pct: dPct, discount_amt: dAmt,
+    round_off: roff, bill_total: rounded,
   }));
   try {
-    await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addBill',rows})});
-    document.getElementById('sheetsStatus').textContent=`✓ Saved: ${billNo}`;
-    document.getElementById('sheetsStatus').className='sheets-status ok';
+    await fetch(url, { method:'POST', mode:'no-cors',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'addBill', rows }) });
+    document.getElementById('sheetsStatus').textContent = '✓ Saved: '+billNo;
+    document.getElementById('sheetsStatus').className = 'sheets-st ok';
   } catch(e) {
-    document.getElementById('sheetsStatus').textContent='✕ Sheets sync failed';
-    document.getElementById('sheetsStatus').className='sheets-status err';
+    document.getElementById('sheetsStatus').textContent = '✕ Sync failed';
+    document.getElementById('sheetsStatus').className = 'sheets-st err';
   }
 }
 
-// ═══════════════════════════════════════════════════
-//  TTS
-// ═══════════════════════════════════════════════════
-// ── TTS ──
-let _bestVoice = null;
-function getBestVoice() {
-  if (_bestVoice) return _bestVoice;
-  const voices = window.speechSynthesis.getVoices();
-  const preferred = [
-    v => v.lang === 'en-IN' && v.name.toLowerCase().includes('female'),
-    v => v.lang === 'en-IN',
-    v => v.lang === 'en-US' && v.name.toLowerCase().includes('female'),
-    v => v.lang === 'en-US',
-    v => v.lang.startsWith('en'),
-  ];
-  for (const fn of preferred) {
-    const found = voices.find(fn);
-    if (found) { _bestVoice = found; return found; }
-  }
-  return null;
-}
-// Pre-load voices
-if (window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = () => { _bestVoice = null; getBestVoice(); };
-}
-function speak(text) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  const v = getBestVoice();
-  if (v) u.voice = v;
-  u.lang = 'en-IN';
-  u.rate = 0.9;   // slower — clearer
-  u.pitch = 1.0;
-  u.volume = 1.0;
-  window.speechSynthesis.speak(u);
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function toTitle(s) {
+  return s.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase())
+    .replace(/\bDr\b/gi, 'Dr.').replace(/\bDr\.\./g, 'Dr.');
 }
 
 // ── INIT ──
-initApp();
 renderItems();
 </script>
 </body>
