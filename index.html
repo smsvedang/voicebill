@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3</title>
+<title>Sahyog Medical – Voice Billing</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
@@ -91,7 +91,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 /* ITEMS TABLE */
 .items-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;}
-.items-head,.item-row{display:grid;grid-template-columns:1.8fr 50px 50px 60px 60px 72px 28px;padding:8px 10px;align-items:center;gap:2px;}
+.items-head,.item-row{display:grid;grid-template-columns:1.8fr 46px 46px 54px 56px 68px 24px 24px;padding:8px 8px;align-items:center;gap:2px;}
 .items-head{background:var(--card);border-bottom:1px solid var(--border);font-size:9px;font-weight:600;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;}
 .items-body{min-height:60px;}
 .item-row{border-bottom:1px solid var(--border);font-size:13px;animation:rowin .2s ease;transition:background .15s;}
@@ -148,7 +148,31 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .rb-g{padding:8px 16px;border:none;border-radius:4px;cursor:pointer;font-family:var(--head);font-weight:600;font-size:13px;background:#22c55e;color:#0a0f0a;}
 .rb-gr{background:#ddd;color:#333;}
 
-/* TOAST */
+/* EDIT MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:150;align-items:flex-end;justify-content:center;padding:0;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 0 0;width:100%;max-width:500px;padding:20px 16px 32px;}
+.modal-title{font-size:14px;font-weight:700;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin-bottom:16px;font-family:var(--head);}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.modal-field{display:flex;flex-direction:column;gap:4px;}
+.modal-field.full{grid-column:1/-1;}
+.modal-lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);}
+.modal-input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:10px 12px;font-family:var(--mono);font-size:15px;outline:none;width:100%;transition:border-color .2s;}
+.modal-input:focus{border-color:var(--accent);}
+.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.mbtn{padding:12px;border-radius:var(--r);font-family:var(--head);font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;}
+.mbtn-save{background:var(--accent);color:#0a0f0a;}
+.mbtn-cancel{background:transparent;color:var(--text2);border:1px solid var(--border);}
+
+/* Edit icon on item rows */
+.edit-btn{width:22px;height:22px;border-radius:4px;background:transparent;border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+.edit-btn:hover{background:var(--adim);border-color:var(--accent);color:var(--accent);}
+
+/* Mobile: bigger touch targets on ask banner */
+.type-btn{padding:14px 8px;font-size:14px;}
+.ask-ok{padding:11px 20px;font-size:15px;}
+.ask-input{font-size:16px;padding:11px 12px;}
+
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);border:1px solid var(--border);padding:8px 18px;border-radius:20px;font-size:12px;font-family:var(--mono);color:var(--text2);transition:transform .3s;z-index:200;white-space:nowrap;}
 .toast.show{transform:translateX(-50%) translateY(0);}
 .toast.ok{border-color:var(--accent);color:var(--accent);}
@@ -164,7 +188,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   @page{size:80mm auto;margin:4mm;}
 }
 @media(max-width:500px){
-  .items-head,.item-row{grid-template-columns:1.6fr 38px 38px 50px 50px 62px 24px;font-size:11px;padding:7px 6px;}
+  .items-head,.item-row{grid-template-columns:1.5fr 34px 34px 42px 46px 58px 22px 22px;font-size:10px;padding:7px 5px;}
   .pt-grid{grid-template-columns:1fr;}
 }
 </style>
@@ -270,6 +294,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <span style="text-align:center">MRP</span>
     <span style="text-align:right">Total</span>
     <span></span>
+    <span></span>
   </div>
   <div class="items-body" id="itemsBody">
     <div class="empty">💊 No items yet. Press 🎤 to add medicine.</div>
@@ -299,6 +324,39 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 </div>
 <div class="sheets-st" id="sheetsStatus"></div>
 
+</div>
+
+<!-- EDIT ITEM MODAL -->
+<div class="modal-overlay" id="editOverlay" onclick="if(event.target===this)closeEdit()">
+  <div class="modal-box">
+    <div class="modal-title">✏ Item Edit Karo</div>
+    <div class="modal-grid">
+      <div class="modal-field full">
+        <div class="modal-lbl">Medicine Name</div>
+        <input class="modal-input" id="editName" type="text" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+      <div class="modal-field">
+        <div class="modal-lbl">Strips / Bottles / Tabs</div>
+        <input class="modal-input" id="editQty" type="number" min="0" inputmode="decimal">
+      </div>
+      <div class="modal-field">
+        <div class="modal-lbl">MRP per Strip/Bottle</div>
+        <input class="modal-input" id="editPrice" type="number" min="0" inputmode="decimal">
+      </div>
+      <div class="modal-field">
+        <div class="modal-lbl">Tabs per Strip (0 = syrup)</div>
+        <input class="modal-input" id="editTabs" type="number" min="0" inputmode="decimal">
+      </div>
+      <div class="modal-field">
+        <div class="modal-lbl">Loose Tablets</div>
+        <input class="modal-input" id="editLoose" type="number" min="0" inputmode="decimal">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-save" onclick="saveEdit()">✓ Save</button>
+      <button class="mbtn mbtn-cancel" onclick="closeEdit()">✕ Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- RECEIPT OVERLAY -->
@@ -673,9 +731,9 @@ function finalizeWizard() {
   const calc = calcEntry(entry);
   items.push(calc);
   renderItems();
-  speak(it.name + ' added');
+  speak(it.name + ' added. Next medicine ke liye mic press karo.');
   toast(it.name + ' — ₹' + calc.total.toFixed(2), 'ok');
-  st('on', '✓ ' + it.name + ' added. Next medicine ke liye mic press karein.');
+  st('', '✓ ' + it.name + ' added. 🎤 Press karo next ke liye.');
 }
 
 function cancelWizard() {
@@ -751,16 +809,22 @@ function showAskNum(question, hint) {
   document.getElementById('askHintTxt').textContent = hint;
   document.getElementById('typeBtns').style.display = 'none';
   document.getElementById('numRow').style.display = 'flex';
-  document.getElementById('askInput').value = '';
+  const inp = document.getElementById('askInput');
+  inp.value = '';
+  inp.type = 'number';
+  inp.inputmode = 'decimal';
   document.getElementById('askBanner').classList.add('show');
-  st('on', '🎙 ' + question);
+  st('on', '🎙 ' + question + ' — bolo ya type karo');
+  // Focus input so mobile keyboard opens automatically
+  setTimeout(() => { try { inp.focus(); } catch(e){} }, 300);
 }
 function submitNum(val) {
   const num = val !== undefined ? val : parseFloat(document.getElementById('askInput').value);
   if (isNaN(num) || num < 0) { speak('Valid number bolo'); return; }
   document.getElementById('askInput').value = '';
+  document.getElementById('askInput').blur(); // dismiss keyboard
   hideAskBanner();
-  if (wizStep === 'qty')   wiz.qty = num;
+  if (wizStep === 'qty')        wiz.qty = num;
   else if (wizStep === 'price') wiz.price = num;
   else if (wizStep === 'tabs')  wiz.tabs_per_strip = num;
   nextStep();
@@ -826,6 +890,7 @@ function renderItems() {
       <span class="inum ${it.tabs_per_strip ? '' : 'dim'}">${it.tabs_per_strip || '—'}</span>
       <span class="inum">₹${it.strip_price}</span>
       <span class="itotal">₹${it.total.toFixed(2)}</span>
+      <button class="edit-btn" onclick="openEdit(${i})" title="Edit">✎</button>
       <button class="del" onclick="delItem(${i})">×</button>
     </div>`;
   }).join('');
@@ -846,6 +911,48 @@ function renderItems() {
 }
 
 function delItem(i) { items.splice(i, 1); renderItems(); }
+
+// ═══════════════════════════════════════
+//  EDIT ITEM
+// ═══════════════════════════════════════
+let editIdx = -1;
+function openEdit(i) {
+  editIdx = i;
+  const it = items[i];
+  document.getElementById('editName').value  = it.name || '';
+  document.getElementById('editQty').value   = it.strip_qty > 0 ? it.strip_qty : (it.tablet_qty || '');
+  document.getElementById('editPrice').value = it.strip_price || '';
+  document.getElementById('editTabs').value  = it.tabs_per_strip || '';
+  document.getElementById('editLoose').value = it.tablet_qty || '';
+  document.getElementById('editOverlay').classList.add('show');
+  setTimeout(() => document.getElementById('editName').focus(), 100);
+}
+function closeEdit() {
+  document.getElementById('editOverlay').classList.remove('show');
+  editIdx = -1;
+}
+function saveEdit() {
+  if (editIdx < 0) return;
+  const name   = document.getElementById('editName').value.trim();
+  const qty    = parseFloat(document.getElementById('editQty').value)   || 0;
+  const price  = parseFloat(document.getElementById('editPrice').value) || 0;
+  const tabs   = parseFloat(document.getElementById('editTabs').value)  || null;
+  const loose  = parseFloat(document.getElementById('editLoose').value) || 0;
+  if (!name) { toast('Naam required', 'er'); return; }
+
+  // Rebuild entry
+  const entry = {
+    name,
+    strip_qty:      loose > 0 ? 0 : qty,
+    tablet_qty:     loose,
+    tabs_per_strip: tabs,
+    strip_price:    price,
+  };
+  items[editIdx] = calcEntry(entry);
+  renderItems();
+  closeEdit();
+  toast(name + ' updated', 'ok');
+}
 
 function clearBill() {
   items = []; discMode = 'pct';
@@ -938,38 +1045,97 @@ function closeReceipt() { document.getElementById('rOverlay').classList.remove('
 //  BLUETOOTH PRINT
 // ══════════════════════════════════════════
 async function btPrint() {
-  if (!navigator.bluetooth) { window.print(); return; }
+  if (!navigator.bluetooth) {
+    toast('Web Bluetooth not supported — use Chrome on Android', 'er');
+    window.print(); return;
+  }
   try {
-    const dev = await navigator.bluetooth.requestDevice({
-      filters: [
-        { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
-        { namePrefix: 'Printer' }, { namePrefix: 'MTP' }, { namePrefix: 'RPP' }
-      ],
-      optionalServices: [
-        '000018f0-0000-1000-8000-00805f9b34fb',
-        'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
-      ]
-    });
+    toast('Printer dhundh raha hai...', 'ok');
+    // Try with filters first, fallback to acceptAllDevices
+    let dev;
+    try {
+      dev = await navigator.bluetooth.requestDevice({
+        filters: [
+          { namePrefix: 'Printer' }, { namePrefix: 'MTP' },
+          { namePrefix: 'RPP' },     { namePrefix: 'BT' },
+          { namePrefix: 'pos' },     { namePrefix: 'POS' },
+          { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
+          { services: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] },
+        ],
+        optionalServices: [
+          '000018f0-0000-1000-8000-00805f9b34fb',
+          'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+          '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+        ]
+      });
+    } catch(filterErr) {
+      // Filters failed — show all devices
+      dev = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [
+          '000018f0-0000-1000-8000-00805f9b34fb',
+          'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+          '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+        ]
+      });
+    }
+
+    toast('Connecting...', 'ok');
     const server = await dev.gatt.connect();
+
+    // Try all known thermal printer UUID profiles
     let char = null;
-    for (const p of [
+    const profiles = [
       { s:'000018f0-0000-1000-8000-00805f9b34fb', c:'00002af1-0000-1000-8000-00805f9b34fb' },
       { s:'e7810a71-73ae-499d-8c15-faa9aef0c3f2', c:'bef8d6c9-9c21-4c9e-b632-bd58c1009f9f' },
-    ]) {
-      try { const sv = await server.getPrimaryService(p.s); char = await sv.getCharacteristic(p.c); break; }
-      catch(e) {}
+      { s:'49535343-fe7d-4ae5-8fa9-9fafd205e455', c:'49535343-8841-43f4-a8d4-ecbe34729bb3' },
+    ];
+    for (const p of profiles) {
+      try {
+        const svc = await server.getPrimaryService(p.s);
+        char = await svc.getCharacteristic(p.c);
+        break;
+      } catch(e) {}
     }
-    if (!char) throw new Error('Characteristic not found');
+    // Last resort — try getting any writable characteristic
+    if (!char) {
+      const services = await server.getPrimaryServices();
+      for (const svc of services) {
+        const chars = await svc.getCharacteristics();
+        for (const ch of chars) {
+          if (ch.properties.write || ch.properties.writeWithoutResponse) {
+            char = ch; break;
+          }
+        }
+        if (char) break;
+      }
+    }
+    if (!char) throw new Error('No writable characteristic found on printer');
+
+    toast('Printing...', 'ok');
     const data = buildEscPos();
-    const CHUNK = 100;
+    const CHUNK = 128;
     for (let i = 0; i < data.length; i += CHUNK) {
-      await char.writeValue(data.slice(i, i + CHUNK));
-      await new Promise(r => setTimeout(r, 40));
+      const chunk = data.slice(i, i + CHUNK);
+      try {
+        if (char.properties.writeWithoutResponse) {
+          await char.writeValueWithoutResponse(chunk);
+        } else {
+          await char.writeValue(chunk);
+        }
+      } catch(e) {
+        await char.writeValue(chunk);
+      }
+      await new Promise(r => setTimeout(r, 60));
     }
-    toast('Printed!', 'ok');
+    toast('✓ Printed!', 'ok');
   } catch(e) {
-    if (e.name !== 'NotFoundError') toast('BT error: ' + e.message, 'er');
-    window.print();
+    if (e.name === 'NotFoundError') {
+      toast('Printer cancel kiya', 'er');
+    } else {
+      toast('BT Error: ' + e.message, 'er');
+      setTimeout(() => window.print(), 500);
+    }
   }
 }
 
