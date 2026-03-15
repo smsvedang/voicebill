@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3.1</title>
+<title>Sahyog Medical – Voice Billing v3</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -405,7 +405,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 ══════════════════════════════════════════════ -->
 <script>
 const CONFIG = {
-  GEMINI_API_KEY:          "AIzaSyCcFX7Qs0Zc61foXlDLNngks3IwxZE3QiE",
+  GROQ_API_KEY:            "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",  // console.groq.com → free
   GOOGLE_SHEET_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyCa_siNUXJbP6hCcoUcxUOj8cq54OjFl2GrOeZG2G3gMRMOphiyqe2BxLTiIbTE7uB/exec",
   BILL_PREFIX:             "SAHYOG",
 
@@ -417,7 +417,7 @@ const CONFIG = {
   STORE_NAME:    "Sahyog Medical Store",
   STORE_ADDR:    "Manasa, Madhya Pradesh - 458110",
   STORE_PHONE:   "7415543744",
-  STORE_EMAIL:   "",
+  STORE_EMAIL:   "sahyogmedicalonline@gmail.com",
   STORE_GSTIN:   "23BUQPS8562N1ZL",
   STORE_DL1:     "",
   STORE_DL2:     "",
@@ -921,120 +921,77 @@ function voiceFieldCapture(fieldKey) {
 }
 
 // ═══════════════════════════════════════════════════
-//  VOICE INPUT ROUTER
+//  VOICE INPUT ROUTER — Groq handles everything
 // ═══════════════════════════════════════════════════
 function handleVoiceInput(raw) {
-  const text = applyCorrections(raw.trim());
+  const text = raw.trim().toLowerCase();
   if (!text) return;
-  setStatus('listening', `<span class="transcript-live">"${text}"</span>`);
+  setStatus('listening', `<span class="transcript-live">"${raw.trim()}"</span>`);
 
-  // ── SPECIAL COMMANDS — always work ──
-  if (/bill\s*(complete|done|finish|ho\s*gaya|khatam|puri)/i.test(text)) {
+  // ── SPECIAL COMMANDS ──
+  if (/bill\s*(complete|done|finish|ho gaya|khatam|puri|banda|bana do)|complete bill/i.test(text)) {
     hideBanner(); hideMatchPanel();
     stopListening(); if (items.length > 0) showReceipt(); return;
   }
-  if (/^(clear|saaf|reset)\b/i.test(text) || /clear\s*(bill|sab|all)/i.test(text)) {
-    hideBanner(); hideMatchPanel();
-    clearBill(); return;
+  if (/^(clear|saaf|reset|hata sab|sab hata)\b|clear\s*(bill|sab|all)/i.test(text)) {
+    hideBanner(); hideMatchPanel(); clearBill(); return;
   }
-  if (/last\s*(hata|nikal|remove|delete)|pichla\s*(hata|nikal)/i.test(text)) {
+  if (/last\s*(hata|nikal|remove|delete|wala hata)|pichla\s*(hata|nikal)|undo/i.test(text)) {
     if (items.length) { const r = items.pop(); renderItems(); speak(r.name + ' removed'); }
+    else speak('Koi item nahi hai');
     return;
   }
-  if (/^cancel$/i.test(text)) {
+  if (/^cancel$|^ruk$|^rukja$/i.test(text)) {
     hideMatchPanel(); hideBanner();
-    speak('Cancelled'); setStatus('listening', 'Cancelled. Aage bolo.'); return;
+    speak('Ok'); setStatus('listening', 'Cancelled.'); return;
   }
 
-  // ── PATIENT / DOCTOR ──
-  let m;
-  m = text.match(/^patient\s+(.+)/i);
-  if (m) {
-    const name = toTitleCase(m[1].replace(/\b(ka naam|name)\b/gi,'').trim());
+  // ── PATIENT ──
+  const pm = text.match(/^patient\s+(.+)/i);
+  if (pm) {
+    const name = toTitleCase(pm[1].replace(/\b(ka naam|name)\b/gi,'').trim());
     document.getElementById('f_patient').value = name;
     document.getElementById('f_patient').classList.add('filled');
     speak('Patient ' + name);
-    if (wizardStep >= 0) startWizardMic();
-    return;
-  }
-  m = text.match(/^doctor\s+(?:dr\.?\s+)?(.+)/i);
-  if (m) {
-    const name = 'Dr. ' + toTitleCase(m[1].replace(/^dr\.?\s+/i,'').trim());
-    document.getElementById('f_doctor').value = name;
-    document.getElementById('f_doctor').classList.add('filled');
-    speak('Doctor ' + name);
-    if (wizardStep >= 0) startWizardMic();
+    setStatus('listening', '✓ Patient: ' + name);
     return;
   }
 
-  // ── MATCH PANEL ACTIVE — user selecting a result ──
+  // ── DOCTOR ──
+  const dm = text.match(/^doctor\s+(?:dr\.?\s+)?(.+)/i);
+  if (dm) {
+    const name = 'Dr. ' + toTitleCase(dm[1].replace(/^dr\.?\s+/i,'').trim());
+    document.getElementById('f_doctor').value = name;
+    document.getElementById('f_doctor').classList.add('filled');
+    speak('Doctor ' + name);
+    setStatus('listening', '✓ Doctor: ' + name);
+    return;
+  }
+
+  // ── MATCH PANEL SELECTION ──
   if (awaitingMatchSelect) {
-    // Number selection: "1", "2", "3", "4"
     const num = parseInt(text.trim());
     if (!isNaN(num) && num >= 1 && num <= matchCandidates.length) {
       selectMatch(num - 1); return;
     }
-    // "pehla"/"first", "doosra"/"second" etc
-    const ordinals = ['pehla','pehli','first','1st','ek','one',
-                      'doosra','doosri','second','2nd','do','two',
-                      'teesra','teesri','third','3rd','teen','three',
-                      'chautha','fourth','4th','char','four'];
-    const oi = [0,0,0,0,0,0, 1,1,1,1,1,1, 2,2,2,2,2,2, 3,3,3,3];
-    for (let i = 0; i < ordinals.length; i++) {
-      if (text.trim().toLowerCase() === ordinals[i]) {
-        selectMatch(oi[i]); return;
-      }
+    const words  = ['pehla','pehli','first','1st','ek','one',
+                    'doosra','doosri','second','2nd','do','two',
+                    'teesra','teesri','third','3rd','teen','three',
+                    'chautha','fourth','4th','char','four'];
+    const winIdx = [0,0,0,0,0,0, 1,1,1,1,1,1, 2,2,2,2,2,2, 3,3,3,3];
+    for (let i = 0; i < words.length; i++) {
+      if (text.trim() === words[i]) { selectMatch(winIdx[i]); return; }
     }
-    // User said something else — treat as a new search
-    hideMatchPanel();
-    // Fall through to search below
+    hideMatchPanel(); // new search
   }
 
-  // ── WIZARD ACTIVE ──
+  // ── WIZARD STEP ACTIVE ──
   if (wizardStep >= 0) {
     submitWizardAnswer(text); return;
   }
 
-  // ── MEDICINE SEARCH ──
-  // First try regex parse (for "Dolo 2 strip 20" style complete commands)
-  const parsed = parseVoiceText(text);
-  if (parsed && parsed.strip_price) {
-    handleParsed(parsed); return;
-  }
-
-  // Try DB fuzzy search
-  if (medicineDB.length > 0) {
-    // Strip numbers — search only on name portion
-    const nameQuery     = text.replace(/\d+.*$/, '').trim() || text;
-    const rawNameQuery  = applyCorrections(raw.trim()).replace(/\d+.*$/, '').trim() || raw.trim();
-
-    // Try corrected text first, then raw, then each word individually
-    let matches = fuzzySearch(nameQuery, 4);
-    if (matches.length === 0) matches = fuzzySearch(rawNameQuery, 4);
-    if (matches.length === 0) {
-      // Try each word separately, take best result
-      const words = nameQuery.split(/\s+/).filter(w => w.length > 2);
-      for (const w of words) {
-        const wm = fuzzySearch(w, 4);
-        if (wm.length > 0) { matches = wm; break; }
-      }
-    }
-
-    if (matches.length === 1) {
-      matchCandidates = matches;
-      selectMatch(0);
-      return;
-    } else if (matches.length > 1) {
-      showMatchPanel(nameQuery, matches); return;
-    }
-    // Still nothing
-    speak('Nahi mila. Dobara bolo ya alag naam try karo.');
-    setStatus('error', '⚠ "' + nameQuery + '" — DB mein nahi mila. Dobara bolo.');
-    return;
-  }
-
-  // No DB — fall back to wizard
-  aiParse(text);
+  // ── GROQ — primary handler for all medicine input ──
+  groqParse(raw.trim());
 }
 
 // ═══════════════════════════════════════════════════
@@ -1247,11 +1204,102 @@ function handleParsed(parsed) {
     startWizard(wi);
   }
 }
-async function aiParse(text) {
-  const words = text.trim().split(/\s+/);
-  const guess = words.length ? cleanName(words.slice(0, Math.min(3, words.length)).join(' ')) : '';
-  startWizard(guess ? { name: guess } : {});
+// ═══════════════════════════════════════════════════
+//  GROQ — complete voice → bill item pipeline
+// ═══════════════════════════════════════════════════
+async function groqParse(rawText) {
+  if (!CONFIG.GROQ_API_KEY || CONFIG.GROQ_API_KEY.startsWith('YOUR_')) {
+    setStatus('error', '⚠ GROQ_API_KEY not set in CONFIG');
+    speak('Groq key nahi hai. CONFIG mein daalo.');
+    return;
+  }
+
+  setStatus('thinking', '⚡ <span class="transcript-live">Samajh raha hoon...</span>');
+
+  // Send full DB list to Groq so it can match names directly
+  const dbList = medicineDB.length > 0
+    ? medicineDB.map(m => m.name).join(', ')
+    : '';
+
+  const sysPrompt = `You are a billing assistant for an Indian medical pharmacy.
+Your job: extract medicine billing info from voice input.
+Voice input may have speech recognition errors — "Ahmedabad" may mean "Amlovas", "polo" may mean "Dolo", etc.
+${dbList ? `Match medicine name to closest from this pharmacy's stock list: ${dbList}` : ''}
+
+Always return ONLY a JSON object. No explanation. No markdown. No extra text.`;
+
+  const userPrompt = `Voice input: "${rawText}"
+
+Return JSON:
+{
+  "name": "medicine name (exact match from stock list if provided)",
+  "qty": 1,
+  "type": "strip",
+  "price": 0,
+  "tabs_per_strip": null,
+  "confidence": "high"
 }
+
+Rules:
+- name: closest match from stock list. If not in stock list, use best guess.
+- qty: how many strips/bottles/tablets. Default 1 if not said.
+- type: "strip" (tablet strips, default), "syrup" (liquid/bottle/ml), "tablet" (loose tablets)
+- price: MRP per unit in rupees. 0 if not mentioned.
+- tabs_per_strip: number of tablets per strip. null if syrup or not mentioned.
+- confidence: "high" if name clearly matches stock, "low" if guessing`;
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + CONFIG.GROQ_API_KEY
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: sysPrompt },
+          { role: 'user',   content: userPrompt }
+        ],
+        max_tokens: 200,
+        temperature: 0.0,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'HTTP ' + res.status);
+    }
+
+    const data = await res.json();
+    const p    = JSON.parse(data.choices?.[0]?.message?.content || '{}');
+    if (!p.name) throw new Error('No name returned');
+
+    // Show what Groq understood
+    const summary = p.name
+      + (p.qty   ? ' × ' + p.qty         : '')
+      + (p.price ? ' @ ₹' + p.price      : '')
+      + (p.confidence === 'low' ? ' ⚠ low confidence' : '');
+    setStatus('listening', '⚡ ' + summary);
+
+    // Build wizard item — only ask for fields Groq didn't fill
+    startWizard({
+      name:           p.name,
+      _type:          (p.type || 'strip').toLowerCase(),
+      qty:            p.qty            || null,
+      price:          p.price          || null,
+      tabs_per_strip: p.tabs_per_strip || null,
+    });
+
+  } catch(e) {
+    setStatus('error', '⚡ Groq error: ' + e.message);
+    speak('Error. Dobara bolo.');
+  }
+}
+
+// Keep old name as alias for compatibility
+async function aiParse(text) { return groqParse(text); }
 
 
 // ═══════════════════════════════════════════════════
