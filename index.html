@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sahyog Medical – Voice Billing v3</title>
+<title>Sahyog Medical – Voice Billing</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
@@ -181,11 +181,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
 @media print{
-  body>*{display:none!important;}
-  .r-overlay{display:flex!important;position:static!important;background:none!important;padding:0!important;}
-  .r-wrap{box-shadow:none!important;max-width:100%!important;}
-  .r-actions{display:none!important;}
-  @page{size:80mm auto;margin:4mm;}
+  body > * { display:none !important; }
+  #printArea { display:block !important; }
+  @page { size:80mm auto; margin:4mm; }
 }
 @media(max-width:500px){
   .items-head,.item-row{grid-template-columns:1.5fr 34px 34px 42px 46px 58px 22px 22px;font-size:10px;padding:7px 5px;}
@@ -365,12 +363,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="rb" id="rContent"></div>
     <div class="r-actions">
       <button class="rb-g" onclick="btPrint()">🖨 BT Print</button>
-      <button class="rb-g" onclick="window.print()">🖨 Print</button>
+      <button class="rb-g" onclick="printReceipt()">🖨 Print</button>
       <button class="rb-g rb-gr" onclick="closeReceipt()">✕ Close</button>
     </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<!-- Hidden print area — always in DOM, only visible during print -->
+<div id="printArea" style="display:none;font-family:'Courier New',Courier,monospace;font-size:12px;line-height:1.55;color:#000;background:#fff;padding:10px;"></div>
 
 <script>
 // ══════════════════════════════════════════
@@ -1040,13 +1040,21 @@ function showReceipt() {
 }
 function closeReceipt() { document.getElementById('rOverlay').classList.remove('show'); }
 
+function printReceipt() {
+  // Copy receipt HTML into the always-visible printArea div
+  const content = document.getElementById('rContent').innerHTML;
+  const pa = document.getElementById('printArea');
+  pa.innerHTML = content;
+  window.print();
+}
+
 // ══════════════════════════════════════════
 //  BLUETOOTH PRINT
 // ══════════════════════════════════════════
 async function btPrint() {
   if (!navigator.bluetooth) {
     toast('Web Bluetooth not supported — use Chrome on Android', 'er');
-    window.print(); return;
+    printReceipt(); return;
   }
   try {
     toast('Printer select karo...', 'ok');
@@ -1119,7 +1127,7 @@ async function btPrint() {
       // User cancelled — do nothing
     } else {
       toast('BT Error: ' + e.message, 'er');
-      setTimeout(() => window.print(), 800);
+      setTimeout(() => printReceipt(), 800);
     }
   }
 }
